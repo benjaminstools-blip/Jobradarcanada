@@ -1,0 +1,76 @@
+// Pure data — safe to import from client components (no server-only deps).
+// Indeed requires a country code (one localized indeed.com domain per country).
+export const INDEED_COUNTRIES = [
+  { code: 'ar', name: 'Argentina' },
+  { code: 'au', name: 'Australia' },
+  { code: 'at', name: 'Austria' },
+  { code: 'bh', name: 'Bahrain' },
+  { code: 'be', name: 'Belgium' },
+  { code: 'br', name: 'Brazil' },
+  { code: 'ca', name: 'Canada' },
+  { code: 'cl', name: 'Chile' },
+  { code: 'cn', name: 'China' },
+  { code: 'co', name: 'Colombia' },
+  { code: 'cz', name: 'Czech Republic' },
+  { code: 'dk', name: 'Denmark' },
+  { code: 'fi', name: 'Finland' },
+  { code: 'fr', name: 'France' },
+  { code: 'de', name: 'Germany' },
+  { code: 'gr', name: 'Greece' },
+  { code: 'hk', name: 'Hong Kong' },
+  { code: 'hu', name: 'Hungary' },
+  { code: 'in', name: 'India' },
+  { code: 'id', name: 'Indonesia' },
+  { code: 'ie', name: 'Ireland' },
+  { code: 'il', name: 'Israel' },
+  { code: 'it', name: 'Italy' },
+  { code: 'jp', name: 'Japan' },
+  { code: 'kw', name: 'Kuwait' },
+  { code: 'lu', name: 'Luxembourg' },
+  { code: 'my', name: 'Malaysia' },
+  { code: 'mx', name: 'Mexico' },
+  { code: 'ma', name: 'Morocco' },
+  { code: 'nl', name: 'Netherlands' },
+  { code: 'nz', name: 'New Zealand' },
+  { code: 'no', name: 'Norway' },
+  { code: 'om', name: 'Oman' },
+  { code: 'pe', name: 'Peru' },
+  { code: 'ph', name: 'Philippines' },
+  { code: 'pl', name: 'Poland' },
+  { code: 'pt', name: 'Portugal' },
+  { code: 'qa', name: 'Qatar' },
+  { code: 'ro', name: 'Romania' },
+  { code: 'sa', name: 'Saudi Arabia' },
+  { code: 'sg', name: 'Singapore' },
+  { code: 'za', name: 'South Africa' },
+  { code: 'kr', name: 'South Korea' },
+  { code: 'es', name: 'Spain' },
+  { code: 'se', name: 'Sweden' },
+  { code: 'ch', name: 'Switzerland' },
+  { code: 'tw', name: 'Taiwan' },
+  { code: 'tr', name: 'Turkey' },
+  { code: 'ua', name: 'Ukraine' },
+  { code: 'ae', name: 'United Arab Emirates' },
+  { code: 'uk', name: 'United Kingdom' },
+  { code: 'us', name: 'United States' },
+  { code: 've', name: 'Venezuela' },
+  { code: 'vn', name: 'Vietnam' },
+  { code: 'cr', name: 'Costa Rica' },
+  { code: 'ec', name: 'Ecuador' },
+  { code: 'eg', name: 'Egypt' },
+  { code: 'ng', name: 'Nigeria' },
+  { code: 'pk', name: 'Pakistan' },
+  { code: 'pa', name: 'Panama' },
+  { code: 'th', name: 'Thailand' },
+  { code: 'uy', name: 'Uruguay' },
+] as const
+
+export const INDEED_COUNTRY_CODES: string[] = INDEED_COUNTRIES.map((c) => c.code)
+
+// The product targets Canada; other countries stay selectable, but anything
+// unrecognized falls back here rather than erroring.
+export const DEFAULT_COUNTRY = 'ca'
+
+export function indeedCountryName(code: string): string {
+  return INDEED_COUNTRIES.find((c) => c.code === code)?.name ?? 'Canada'
+}
