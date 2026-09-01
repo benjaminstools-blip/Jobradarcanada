@@ -20,7 +20,10 @@ defaults to Canada, though every Indeed country remains selectable.
 ## Repo State
 
 - **Path:** `/Users/Sketcho/Desktop/Job canada/job-canada`
-- **Git:** initialized on `main`, **no commits yet**, no remote configured
+- **Git:** on `main`, pushed to **https://github.com/benjaminstools-blip/Jobradarcanada** (public).
+  Note the remote is named *Jobradarcanada*, not job-canada. Auth is via osxkeychain, not the
+  `gh` CLI — `gh auth login` wrote the credential but the `gh` binary is not currently on PATH,
+  so `gh` subcommands (PRs, issues) fail while push/pull work.
 - **Not deployed.** There is no Vercel project and no live URL for this fork.
 - **Local dev:** http://localhost:3000
 
@@ -192,7 +195,7 @@ RLS enabled on every table, policy `auth.uid() = user_id`.
 | Table | Key columns |
 |-------|-------------|
 | `cv_profiles` | user_id (unique), full_name, current_job_title, years_of_experience, technical_skills (jsonb), professional_summary, raw_cv_text, cv_file_path |
-| `jobs` | user_id, source (`linkedin` \| `indeed` \| `eluta` \| `workopolis`), job_title, company_name, location, job_description, apply_url, match_score (int) |
+| `jobs` | user_id, source (`linkedin` \| `indeed` \| `eluta` \| `workopolis`), job_title, company_name, location, **province** (2-letter code, nullable), job_description, apply_url, match_score (int) |
 | `applications` | user_id, job_id (FK→jobs), status (Saved \| Applied \| Screening \| Technical Interview \| Offer \| Rejected), status_updated_at |
 | `user_api_keys` | user_id (PK), **anthropic_api_key**, apify_api_key |
 | `generated_documents` | user_id, job_id (FK→jobs), type (`cover_letter` \| `tailored_cv`), content, unique(user_id, job_id, type) |
@@ -307,6 +310,13 @@ Local dev needs Site URL `http://localhost:3000` and redirect URL
 - Live job fetching from LinkedIn, Indeed, Eluta, and Workopolis via Apify, with per-country Indeed
   targeting and Canada-only gating for the two Canadian boards
 - AI match scoring (0–100) per job
+- Province/territory filtering on the jobs feed. `lib/provinces.ts` parses the free-text location
+  into a province code at insert time, Canadian searches only — "Ontario, CA" is in California, so
+  the poll route gates on `country=ca`. Two-letter codes match uppercase-only, because lowercase
+  "on" is the English word. Nulls ("Remote", "Canada") bucket under an "Other" chip.
+- Canadian CV/cover-letter conventions — `CANADIAN_CONVENTIONS` in `lib/prompts.ts`, shared by both
+  prompt builders: province codes, Canadian spelling, no photo/DOB/SIN, and anti-hallucination
+  clauses on work authorization and foreign credential equivalency
 - Cover letter and tailored-CV generation per job, cached and regenerable
 - Save / Apply buttons on job cards, feeding the tracker
 - Kanban board with drag-and-drop across 6 status columns
@@ -322,8 +332,10 @@ Local dev needs Site URL `http://localhost:3000` and redirect URL
 - No commit history, no remote, no deployment
 - README.md is still the untouched `create-next-app` boilerplate
 - Realtime Supabase subscription on `applications` (dashboard polls every 30s instead)
-- Canada-specific features beyond source selection — no NOC codes, no provincial filtering, no
-  Canadian-format CV conventions in the prompts
+- **NOC codes** — no National Occupational Classification mapping anywhere. This is the one
+  remaining Canada-specific gap, and it needs a source-of-truth decision first: ship a NOC 2021
+  reference table (~516 unit groups) vs. ask Claude per job. A hallucinated NOC code is a real
+  problem — employers and immigration programs check them.
 - CV re-parse from the stored file (re-upload required)
 - Search history / saved searches
 - Mobile nav (hamburger for small screens)

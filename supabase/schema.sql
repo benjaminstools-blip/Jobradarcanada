@@ -62,6 +62,21 @@ alter table jobs drop constraint if exists jobs_source_check;
 alter table jobs add constraint jobs_source_check
   check (source in ('linkedin', 'indeed', 'eluta', 'workopolis'));
 
+-- Province/territory, derived from the free-text `location` at insert time and
+-- only for Canadian searches (see lib/provinces.ts). Nullable on purpose:
+-- "Remote", "Canada", and "Greater Toronto Area" name no province, and a null
+-- is honest where a guess would be wrong. Rows inserted before this column
+-- existed stay null and show under "Other" in the jobs filter.
+alter table jobs add column if not exists province text;
+
+alter table jobs drop constraint if exists jobs_province_check;
+alter table jobs add constraint jobs_province_check
+  check (province is null or province in (
+    'AB', 'BC', 'MB', 'NB', 'NL', 'NS', 'NT', 'NU', 'ON', 'PE', 'QC', 'SK', 'YT'
+  ));
+
+create index if not exists jobs_user_province_idx on jobs (user_id, province);
+
 -- 3. applications
 create table if not exists applications (
   id uuid primary key default gen_random_uuid(),

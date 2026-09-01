@@ -13,7 +13,9 @@ import { GenerateDocsModal } from '@/components/jobs/GenerateDocsModal'
 import { ApiKeysGate } from '@/components/ApiKeysGate'
 import { INDEED_COUNTRIES, DEFAULT_COUNTRY } from '@/lib/countries'
 import { SOURCE_LABELS } from '@/lib/sources'
+import { PROVINCES, provinceName } from '@/lib/provinces'
 import type { Job, JobSource } from '@/types'
+import type { ProvinceCode } from '@/lib/provinces'
 
 export default function JobsPage() {
   const queryClient = useQueryClient()
@@ -27,6 +29,7 @@ export default function JobsPage() {
   const [partialWarning, setPartialWarning] = useState('')
   const [clearing, setClearing] = useState(false)
   const [generateDocsJob, setGenerateDocsJob] = useState<Job | null>(null)
+  const [provinceFilter, setProvinceFilter] = useState<ProvinceCode | 'all' | 'none'>('all')
 
   const { data: jobs = [], isLoading } = useQuery<Job[]>({
     queryKey: ['jobs'],
@@ -148,7 +151,9 @@ export default function JobsPage() {
       attempts++
 
       try {
-        const res = await fetch(`/api/jobs/poll?runs=${encodeURIComponent(runsParam)}`)
+        const res = await fetch(
+          `/api/jobs/poll?runs=${encodeURIComponent(runsParam)}&country=${encodeURIComponent(country)}`
+        )
         const status = await res.json()
 
         if (status.done) {
@@ -246,6 +251,24 @@ export default function JobsPage() {
   }
 
   const sortedJobs = [...jobs].sort((a, b) => (b.match_score ?? -1) - (a.match_score ?? -1))
+
+  // Only provinces actually present in the current feed get a chip — an empty
+  // row of 13 is noise. Ordered by PROVINCES so the row is stable between fetches.
+  const provinceCounts = new Map<ProvinceCode, number>()
+  let noProvinceCount = 0
+  for (const job of sortedJobs) {
+    if (job.province) provinceCounts.set(job.province, (provinceCounts.get(job.province) ?? 0) + 1)
+    else noProvinceCount++
+  }
+  const presentProvinces = PROVINCES.filter((p) => provinceCounts.has(p.code))
+  const showProvinceFilter = presentProvinces.length > 0
+
+  const visibleJobs =
+    provinceFilter === 'all'
+      ? sortedJobs
+      : provinceFilter === 'none'
+        ? sortedJobs.filter((j) => !j.province)
+        : sortedJobs.filter((j) => j.province === provinceFilter)
 
   const keysMissing =
     !apiKeys.isLoading && apiKeys.data && (!apiKeys.data.anthropic_set || !apiKeys.data.apify_set)
@@ -373,6 +396,36 @@ export default function JobsPage() {
         </div>
       )}
 
+      {showProvinceFilter && !isLoading && (
+        <div className="flex flex-wrap gap-2 animate-fade-in">
+          <ProvinceChip
+            label="All"
+            count={sortedJobs.length}
+            active={provinceFilter === 'all'}
+            onClick={() => setProvinceFilter('all')}
+          />
+          {presentProvinces.map((p) => (
+            <ProvinceChip
+              key={p.code}
+              label={p.code}
+              title={provinceName(p.code)}
+              count={provinceCounts.get(p.code) ?? 0}
+              active={provinceFilter === p.code}
+              onClick={() => setProvinceFilter(p.code)}
+            />
+          ))}
+          {noProvinceCount > 0 && (
+            <ProvinceChip
+              label="Other"
+              title="Remote, nationwide, or no province named"
+              count={noProvinceCount}
+              active={provinceFilter === 'none'}
+              onClick={() => setProvinceFilter('none')}
+            />
+          )}
+        </div>
+      )}
+
       {isLoading ? (
         <div className="space-y-3">
           {[...Array(3)].map((_, i) => (
@@ -381,7 +434,7 @@ export default function JobsPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {sortedJobs.map((job, index) => (
+          {visibleJobs.map((job, index) => (
             <div key={job.id} style={{ animationDelay: `${index * 60}ms` }}>
               <JobCard
                 job={job}
@@ -403,5 +456,36 @@ export default function JobsPage() {
         />
       )}
     </div>
+  )
+}
+
+function ProvinceChip({
+  label,
+  title,
+  count,
+  active,
+  onClick,
+}: {
+  label: string
+  title?: string
+  count: number
+  active: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      aria-pressed={active}
+      className="px-3 h-7 text-xs font-medium rounded-full transition-colors"
+      style={
+        active
+          ? { background: 'linear-gradient(135deg, #10B981, #059669)', color: '#fff', border: '1px solid transparent' }
+          : { background: 'rgba(255,255,255,0.04)', color: '#94A3B8', border: '1px solid rgba(255,255,255,0.08)' }
+      }
+    >
+      {label}
+      <span className="ml-1.5" style={{ opacity: 0.65 }}>{count}</span>
+    </button>
   )
 }

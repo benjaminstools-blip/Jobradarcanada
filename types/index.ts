@@ -1,3 +1,5 @@
+import type { ProvinceCode } from '@/lib/provinces'
+
 export interface CVProfile {
   id: string
   user_id: string
@@ -23,6 +25,9 @@ export interface Job {
   job_title: string
   company_name: string | null
   location: string | null
+  /** Derived from `location` on insert, Canadian searches only. Null when the
+   *  listing names no province ("Remote", "Canada") — see lib/provinces.ts. */
+  province: ProvinceCode | null
   job_description: string | null
   apply_url: string | null
   match_score: number | null

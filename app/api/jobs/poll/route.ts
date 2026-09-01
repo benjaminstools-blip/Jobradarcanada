@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { createApifyClient } from '@/lib/apify'
 import { sourceById, DATASET_ITEM_LIMIT } from '@/lib/sources'
 import { resolveApifyKey, NO_APIFY_KEY } from '@/lib/keys'
+import { parseProvince } from '@/lib/provinces'
+import { DEFAULT_COUNTRY } from '@/lib/countries'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
@@ -18,6 +20,12 @@ export async function GET(request: NextRequest) {
 
   // `runs` is a comma-separated list of sourceId:runId pairs, so adding a board
   // doesn't change the query-string shape.
+  // Province is only derivable for Canadian searches: "Ontario, CA" is a city in
+  // California, and the location string alone cannot settle it. Defaults to the
+  // product's own default country when the param is absent.
+  const isCanada =
+    (request.nextUrl.searchParams.get('country') ?? DEFAULT_COUNTRY) === 'ca'
+
   const runs = (request.nextUrl.searchParams.get('runs') ?? '')
     .split(',')
     .map((pair) => pair.split(':'))
@@ -70,11 +78,15 @@ export async function GET(request: NextRequest) {
         try {
           const datasetId = (await apify.run(runId).get())!.defaultDatasetId
           const { items } = await apify.dataset(datasetId).listItems({ limit: DATASET_ITEM_LIMIT })
-          return items.map((item) => ({
-            user_id: user.id,
-            source: source.id,
-            ...source.map(item as Record<string, unknown>),
-          }))
+          return items.map((item) => {
+            const mapped = source.map(item as Record<string, unknown>)
+            return {
+              user_id: user.id,
+              source: source.id,
+              ...mapped,
+              province: isCanada ? parseProvince(mapped.location) : null,
+            }
+          })
         } catch (err) {
           console.error(`[jobs/poll] ${id} dataset:`, err instanceof Error ? err.message : err)
           return []
