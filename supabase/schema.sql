@@ -19,6 +19,17 @@ create table if not exists cv_profiles (
   unique (user_id)
 );
 
+-- NOC 2021 unit group code for the candidate's own occupation, assigned at CV
+-- parse time and constrained to the 516 real codes (see lib/noc.ts). Nullable
+-- on purpose: a CV with no clear occupation, or a parse that produced a code
+-- outside the set, stores null rather than a plausible-looking wrong code.
+-- TEER is not stored — in NOC 2021 it is the second digit of the code.
+alter table cv_profiles add column if not exists noc_code text;
+
+alter table cv_profiles drop constraint if exists cv_profiles_noc_code_check;
+alter table cv_profiles add constraint cv_profiles_noc_code_check
+  check (noc_code is null or noc_code ~ '^[0-9]{5}$');
+
 alter table cv_profiles enable row level security;
 
 drop policy if exists "Users can manage their own CV profile" on cv_profiles;

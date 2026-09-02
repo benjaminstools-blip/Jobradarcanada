@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createClaudeClient, CV_PARSE_MODEL, textOf } from '@/lib/claude'
 import { resolveAnthropicKey, NO_ANTHROPIC_KEY } from '@/lib/keys'
+import { NOC_CODES, NOC_REFERENCE_LIST, isValidNocCode } from '@/lib/noc'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -15,6 +16,7 @@ const ParsedCvSchema = z.object({
   years_of_experience: z.number().nullable(),
   technical_skills: z.array(z.string()).nullable(),
   professional_summary: z.string().nullable(),
+  noc_code: z.string().nullable(),
 })
 
 // Mirrors ParsedCvSchema. Structured outputs require every property listed in
@@ -27,6 +29,9 @@ const CV_JSON_SCHEMA = {
     years_of_experience: { type: ['number', 'null'] },
     technical_skills: { type: ['array', 'null'], items: { type: 'string' } },
     professional_summary: { type: ['string', 'null'] },
+    // Constrained to the 516 real NOC 2021 codes, so the model cannot emit a
+    // code that does not exist. Still re-checked with isValidNocCode below.
+    noc_code: { type: ['string', 'null'], enum: [...NOC_CODES, null] },
   },
   required: [
     'full_name',
@@ -34,6 +39,7 @@ const CV_JSON_SCHEMA = {
     'years_of_experience',
     'technical_skills',
     'professional_summary',
+    'noc_code',
   ],
   additionalProperties: false,
 } as const
@@ -116,13 +122,30 @@ export async function POST(request: Request) {
       system:
         'You are a CV parser. Extract the requested fields from the CV text. ' +
         'Use null for any field the CV does not state — never invent a value. ' +
-        'professional_summary is two sentences at most.',
+        'professional_summary is two sentences at most.\n\n' +
+        'noc_code: pick the single NOC 2021 unit group that best matches the ' +
+        "candidate's current or most recent occupation, choosing from the list " +
+        'below. Match on the actual work performed, not on job-title wording — ' +
+        'titles vary by employer while NOC groups do not. Use null if the CV ' +
+        'does not establish an occupation clearly enough to choose, or if ' +
+        'nothing in the list is a reasonable fit. A wrong code is worse than ' +
+        'no code: employers and immigration programs check it.\n\n' +
+        'NOC 2021 unit groups (code then title):\n' +
+        NOC_REFERENCE_LIST,
       messages: [{ role: 'user', content: rawCvText }],
     })
 
     if (message.stop_reason === 'refusal') throw new Error('Model declined to parse')
 
     parsed = ParsedCvSchema.parse(JSON.parse(textOf(message)))
+
+    // Second line of defence behind the schema enum. A code outside the real
+    // 516 is dropped rather than stored — null is recoverable, a wrong NOC on
+    // an immigration-facing profile is not.
+    if (parsed.noc_code !== null && !isValidNocCode(parsed.noc_code)) {
+      console.warn(`[cv/upload] discarded invalid NOC code: ${parsed.noc_code}`)
+      parsed.noc_code = null
+    }
   } catch (err) {
     console.error('[cv/upload] parse failed:', err instanceof Error ? err.message : err)
     return NextResponse.json({
@@ -140,6 +163,7 @@ export async function POST(request: Request) {
       years_of_experience: parsed.years_of_experience,
       technical_skills: parsed.technical_skills,
       professional_summary: parsed.professional_summary,
+      noc_code: parsed.noc_code,
       raw_cv_text: rawCvText,
       cv_file_path: `${user.id}/cv.pdf`,
       updated_at: new Date().toISOString(),

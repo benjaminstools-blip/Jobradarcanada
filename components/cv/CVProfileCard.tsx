@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { nocTitle, teerOf, teerLabel } from '@/lib/noc'
 import type { CVProfile } from '@/types'
 
 export function CVProfileCard({ profile }: { profile: CVProfile }) {
@@ -25,6 +26,22 @@ export function CVProfileCard({ profile }: { profile: CVProfile }) {
             </p>
           </div>
         </div>
+
+        {profile.noc_code && nocTitle(profile.noc_code) && (
+          <div>
+            <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">
+              NOC 2021 Occupation
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-mono text-sm text-slate-400">{profile.noc_code}</span>
+              <span className="text-white font-medium">{nocTitle(profile.noc_code)}</span>
+              <Badge variant="secondary" className="bg-slate-800 text-slate-300 border-slate-600">
+                TEER {teerOf(profile.noc_code)}
+              </Badge>
+            </div>
+            <p className="text-slate-500 text-xs mt-1">{teerLabel(profile.noc_code)}</p>
+          </div>
+        )}
 
         {profile.technical_skills && profile.technical_skills.length > 0 && (
           <div>

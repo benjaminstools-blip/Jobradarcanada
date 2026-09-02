@@ -10,6 +10,9 @@ export interface CVProfile {
   professional_summary: string | null
   raw_cv_text: string | null
   cv_file_path: string | null
+  /** NOC 2021 unit group code (5 digits). Validated against lib/noc.ts before
+   *  it is stored — never trust an LLM-produced code without that check. */
+  noc_code: string | null
   created_at: string
   updated_at: string
 }
