@@ -31,7 +31,14 @@ const CV_JSON_SCHEMA = {
     professional_summary: { type: ['string', 'null'] },
     // Constrained to the 516 real NOC 2021 codes, so the model cannot emit a
     // code that does not exist. Still re-checked with isValidNocCode below.
-    noc_code: { type: ['string', 'null'], enum: [...NOC_CODES, null] },
+    //
+    // Must be anyOf, not `type: ['string','null']` with an enum — the API
+    // rejects an enum under a nullable union type ("Enum value '00010' does
+    // not match declared type '['string', 'null']'") and 400s the whole
+    // request, which took CV parsing down entirely.
+    noc_code: {
+      anyOf: [{ type: 'string', enum: NOC_CODES }, { type: 'null' }],
+    },
   },
   required: [
     'full_name',
@@ -148,8 +155,18 @@ export async function POST(request: Request) {
     }
   } catch (err) {
     console.error('[cv/upload] parse failed:', err instanceof Error ? err.message : err)
+
+    // Only blame the key when the key is actually the problem. Pointing at
+    // Settings for every failure sends people to re-check a working key while
+    // the real fault (a bad request, a refusal, a malformed response) goes
+    // unmentioned.
+    const status = (err as { status?: number } | null)?.status
+    const isAuth = status === 401 || status === 403
+
     return NextResponse.json({
-      error: "Couldn't parse your CV. Try again, or check your Anthropic API key in Settings.",
+      error: isAuth
+        ? 'Your Anthropic API key was rejected. Check it in Settings.'
+        : "Couldn't parse your CV. This is a problem on our end, not your key — try again, and if it persists the server log has the detail.",
     }, { status: 500 })
   }
 
