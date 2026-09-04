@@ -49,6 +49,18 @@ function formatIndeedLocation(value: unknown): string | null {
   if (typeof value === 'string') return stripHtml(value)
   if (value && typeof value === 'object') {
     const loc = value as Record<string, unknown>
+
+    // This actor has no `region` field. It carries the province only inside
+    // formattedAddressShort ("Vancouver, BC"), so preferring city/country
+    // produced "Vancouver, Canada" and lost the province entirely — every
+    // Indeed row came back with a null province and vanished from the filter.
+    // formattedAddressLong can carry a postal code and fullAddress a street
+    // number, so the short form is the one to want.
+    for (const key of ['formattedAddressShort', 'formattedAddressLong']) {
+      const v = loc[key]
+      if (typeof v === 'string' && v.trim()) return stripHtml(v)
+    }
+
     const parts = [loc.city, loc.region, loc.country]
       .filter((p): p is string => typeof p === 'string' && p.trim().length > 0)
     if (parts.length) return parts.join(', ')
