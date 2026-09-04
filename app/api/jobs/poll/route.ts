@@ -67,9 +67,13 @@ export async function GET(request: NextRequest) {
   }
 
   const done = settled.every((r) => r.done)
-  if (!done) return NextResponse.json({ done, errors })
 
-  // Every run is terminal — ingest whichever succeeded.
+  // Ingest every run that has SUCCEEDED on THIS poll rather than waiting for
+  // the whole batch to finish. LinkedIn routinely runs for several minutes
+  // while the other three land in seconds; gating ingestion on the slowest run
+  // meant the client hit its two-minute ceiling and threw away results that
+  // were ready almost immediately. Sources are reported back in `harvested` so
+  // the client drops them from the next poll and they are not inserted twice.
   const harvested = await Promise.all(
     settled
       .filter((r) => r.ok)
@@ -95,9 +99,40 @@ export async function GET(request: NextRequest) {
   )
 
   const insertRows = harvested.flat()
+
   if (insertRows.length > 0) {
-    await supabase.from('jobs').insert(insertRows)
+    // Belt and braces behind `harvested`: a retried or duplicated poll must not
+    // insert the same posting twice. apply_url is the only stable identity a
+    // listing carries across sources.
+    const urls = insertRows.map((r) => r.apply_url).filter(Boolean) as string[]
+    const seen = new Set<string>()
+
+    if (urls.length > 0) {
+      const { data: existing } = await supabase
+        .from('jobs')
+        .select('apply_url')
+        .eq('user_id', user.id)
+        .in('apply_url', urls)
+      for (const row of existing ?? []) {
+        if (row.apply_url) seen.add(row.apply_url)
+      }
+    }
+
+    const fresh = insertRows.filter((r) => {
+      if (!r.apply_url) return true
+      if (seen.has(r.apply_url)) return false
+      seen.add(r.apply_url)
+      return true
+    })
+
+    if (fresh.length > 0) {
+      const { error } = await supabase.from('jobs').insert(fresh)
+      if (error) console.error('[jobs/poll] insert:', error.message)
+    }
   }
 
-  return NextResponse.json({ done, errors })
+  // Sources ingested on this call — the client removes them from `runs`.
+  const ingested = settled.filter((r) => r.ok).map((r) => r.id)
+
+  return NextResponse.json({ done, errors, harvested: ingested })
 }

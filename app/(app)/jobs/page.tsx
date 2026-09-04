@@ -136,34 +136,62 @@ export default function JobsPage() {
 
     // Sources that never started count as failures from the outset.
     let failed: string[] = started.errors ?? []
-    const runsParam = requested.map((id) => `${id}:${started.runs[id]}`).join(',')
+
+    // Pending shrinks as sources land. A source is dropped once the server has
+    // ingested it (harvested) or reported it failed, so a slow board like
+    // LinkedIn no longer holds up the ones that already returned.
+    let pending = requested.filter((id) => !failed.includes(id))
+    const harvested: string[] = []
 
     let attempts = 0
     const maxAttempts = 40 // 40 × 3s = 2 min max
 
-    while (attempts < maxAttempts) {
+    while (attempts < maxAttempts && pending.length > 0) {
       await new Promise((r) => setTimeout(r, 3000))
       attempts++
 
       try {
+        const runsParam = pending.map((id) => `${id}:${started.runs[id]}`).join(',')
         const res = await fetch(
           `/api/jobs/poll?runs=${encodeURIComponent(runsParam)}&country=${encodeURIComponent(country)}`
         )
         const status = await res.json()
 
-        if (status.done) {
-          failed = [...new Set([...failed, ...(status.errors ?? [])])]
-          const succeeded = requested.filter((s) => !failed.includes(s))
+        const justHarvested: string[] = status.harvested ?? []
+        const justFailed: string[] = status.errors ?? []
 
-          if (failed.length > 0 && succeeded.length > 0) {
-            setPartialWarning(
-              `Showing results from ${succeeded.map(label).join(', ')} only — ` +
-              `${failed.map(label).join(', ')} fetch failed.`
-            )
-          }
-          break
+        if (justHarvested.length > 0) {
+          harvested.push(...justHarvested)
+          // Show what has landed instead of making the user wait for the rest.
+          await queryClient.invalidateQueries({ queryKey: ['jobs'] })
+        }
+        failed = [...new Set([...failed, ...justFailed])]
+
+        const settledNow = new Set([...justHarvested, ...justFailed])
+        pending = pending.filter((id) => !settledNow.has(id))
+
+        if (pending.length > 0) {
+          setFetchStatus(`Still searching ${pending.map(label).join(', ')}…`)
         }
       } catch { /* keep polling */ }
+    }
+
+    // Anything still pending ran past the two-minute ceiling — report it as such
+    // rather than silently dropping it.
+    const timedOut = pending
+    const succeeded = [...new Set(harvested)]
+    const problems = [...failed, ...timedOut]
+
+    if (problems.length > 0 && succeeded.length > 0) {
+      setPartialWarning(
+        `Showing ${succeeded.map(label).join(', ')}. ` +
+        (failed.length > 0 ? `${failed.map(label).join(', ')} failed. ` : '') +
+        (timedOut.length > 0 ? `${timedOut.map(label).join(', ')} still running — search again shortly to pick up those results.` : '')
+      )
+    } else if (problems.length > 0 && succeeded.length === 0) {
+      setPartialWarning(
+        `No results yet — ${problems.map(label).join(', ')} did not finish in time.`
+      )
     }
 
     setFetching(false)
