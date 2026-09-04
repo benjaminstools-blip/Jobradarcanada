@@ -17,9 +17,14 @@ export interface CVProfile {
   updated_at: string
 }
 
-/** Keep in sync with SOURCES in lib/sources.ts and the jobs_source_check
- *  constraint in supabase/schema.sql. */
-export type JobSource = 'linkedin' | 'indeed' | 'eluta' | 'workopolis'
+/** Boards that Apify scrapes. Keep in sync with SOURCES in lib/sources.ts. */
+export type ScrapedSource = 'linkedin' | 'indeed' | 'eluta' | 'workopolis'
+
+/** What `jobs.source` can hold — every scraped board plus 'manual' for a job the
+ *  user added by pasting a link. Kept separate from ScrapedSource so SOURCES
+ *  stays exhaustive: 'manual' has no actor, input builder, or mapper.
+ *  Keep in sync with the jobs_source_check constraint in supabase/schema.sql. */
+export type JobSource = ScrapedSource | 'manual'
 
 export interface Job {
   id: string

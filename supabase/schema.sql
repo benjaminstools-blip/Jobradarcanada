@@ -42,7 +42,7 @@ create policy "Users can manage their own CV profile"
 create table if not exists jobs (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references auth.users(id) on delete cascade not null,
-  source text check (source in ('linkedin', 'indeed', 'eluta', 'workopolis')) not null,
+  source text check (source in ('linkedin', 'indeed', 'eluta', 'workopolis', 'manual')) not null,
   job_title text not null,
   company_name text,
   location text,
@@ -69,9 +69,11 @@ create policy "Users can manage their own jobs"
 -- the app no longer renders; re-running a search repopulates the feed.
 delete from jobs where source = 'jobberman';
 
+-- 'manual' is a job the user added by pasting a link, not a scraped board. It
+-- has no Apify actor, so it is absent from SOURCES in lib/sources.ts.
 alter table jobs drop constraint if exists jobs_source_check;
 alter table jobs add constraint jobs_source_check
-  check (source in ('linkedin', 'indeed', 'eluta', 'workopolis'));
+  check (source in ('linkedin', 'indeed', 'eluta', 'workopolis', 'manual'));
 
 -- Province/territory, derived from the free-text `location` at insert time and
 -- only for Canadian searches (see lib/provinces.ts). Nullable on purpose:

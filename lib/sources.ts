@@ -4,7 +4,7 @@
 //
 // Pure data + pure functions, no server-only imports, so the client can import
 // SOURCE_LABELS from it too.
-import type { JobSource } from '@/types'
+import type { ScrapedSource } from '@/types'
 
 export interface SearchParams {
   jobTitle: string
@@ -28,7 +28,7 @@ export interface MappedJob {
 }
 
 export interface SourceDef {
-  id: JobSource
+  id: ScrapedSource
   label: string
   actor: string
   /** Builds the actor's input. Field names differ per actor — do not assume. */
@@ -141,9 +141,9 @@ export const SOURCES: SourceDef[] = [
   },
 ]
 
-export const SOURCE_LABELS: Record<JobSource, string> = Object.fromEntries(
+export const SOURCE_LABELS: Record<ScrapedSource, string> = Object.fromEntries(
   SOURCES.map((s) => [s.id, s.label])
-) as Record<JobSource, string>
+) as Record<ScrapedSource, string>
 
 export function sourcesFor(country: string): SourceDef[] {
   return SOURCES.filter((s) => !s.appliesTo || s.appliesTo(country))

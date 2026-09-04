@@ -9,7 +9,7 @@ import { ApiKeysGate } from '@/components/ApiKeysGate'
 import { INDEED_COUNTRIES, DEFAULT_COUNTRY } from '@/lib/countries'
 import { SOURCE_LABELS } from '@/lib/sources'
 import { PROVINCES, provinceName } from '@/lib/provinces'
-import type { Job, JobSource } from '@/types'
+import type { Job, ScrapedSource } from '@/types'
 import type { ProvinceCode } from '@/lib/provinces'
 
 export default function JobsPage() {
@@ -25,6 +25,11 @@ export default function JobsPage() {
   const [clearing, setClearing] = useState(false)
   const [generateDocsJob, setGenerateDocsJob] = useState<Job | null>(null)
   const [provinceFilter, setProvinceFilter] = useState<ProvinceCode | 'all' | 'none'>('all')
+  const [importUrl, setImportUrl] = useState('')
+  const [importing, setImporting] = useState(false)
+  // Set when a site blocks automated reading — reveals the paste textarea.
+  const [pasteReason, setPasteReason] = useState('')
+  const [pastedText, setPastedText] = useState('')
 
   const { data: jobs = [], isLoading } = useQuery<Job[]>({
     queryKey: ['jobs'],
@@ -127,7 +132,7 @@ export default function JobsPage() {
     }
 
     const requested = Object.keys(started.runs)
-    const label = (id: string) => SOURCE_LABELS[id as JobSource] ?? id
+    const label = (id: string) => SOURCE_LABELS[id as ScrapedSource] ?? id
 
     // Client-side polling — works on Vercel free tier
     setFetchStatus(
@@ -210,6 +215,54 @@ export default function JobsPage() {
 
     if (freshJobs?.length) {
       scoreJobsBatched(freshJobs)
+    }
+  }
+
+  async function handleImport() {
+    if (!importUrl.trim()) {
+      toast.error('Paste a job link first.')
+      return
+    }
+    if (!hasCvProfile.data) {
+      toast.error('Upload your CV first — jobs are scored against it.')
+      return
+    }
+
+    setImporting(true)
+    try {
+      const res = await fetch('/api/jobs/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: importUrl.trim(),
+          pastedText: pastedText.trim() || undefined,
+        }),
+      })
+      const json = await res.json()
+
+      if (!res.ok) {
+        toast.error(json.error ?? 'Could not add that job.')
+        return
+      }
+
+      // Expected for Indeed and LinkedIn — ask for the text rather than failing.
+      if (json.needsPaste) {
+        setPasteReason(json.reason ?? 'Paste the job description below.')
+        return
+      }
+
+      setImportUrl('')
+      setPastedText('')
+      setPasteReason('')
+      toast.success(`Added “${json.job.job_title}”.`)
+
+      await queryClient.invalidateQueries({ queryKey: ['jobs'] })
+      // Reuse the existing scorer so it sorts into the feed by match score.
+      scoreJobsBatched([json.job])
+    } catch {
+      toast.error('Network error. Could not add that job.')
+    } finally {
+      setImporting(false)
     }
   }
 
@@ -350,6 +403,55 @@ export default function JobsPage() {
               </select>
             </Field>
           </div>
+        </section>
+
+        {/* Add one posting by link. Same ruled vocabulary as the search panel. */}
+        <section className="mt-10 border-t border-rule-strong pt-5">
+          <div className="flex items-baseline justify-between gap-4">
+            <p className="field-label">Or add one link</p>
+            <span className="font-mono text-[0.625rem] text-ink-faint">
+              Indeed and LinkedIn need a paste
+            </span>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 mt-3">
+            <input
+              type="url"
+              inputMode="url"
+              placeholder="https://…"
+              value={importUrl}
+              onChange={(e) => {
+                setImportUrl(e.target.value)
+                // A new link invalidates the previous paste prompt.
+                if (pasteReason) { setPasteReason(''); setPastedText('') }
+              }}
+              onKeyDown={(e) => e.key === 'Enter' && !importing && handleImport()}
+              className="flex-1 bg-paper-deep border border-rule px-3 py-2.5 text-ink placeholder:text-ink-faint/60 outline-none focus:border-vermilion transition-colors duration-150"
+            />
+            <button
+              onClick={handleImport}
+              disabled={importing}
+              className="px-6 py-2.5 text-xs font-medium tracking-widest uppercase border border-ink text-ink hover:bg-vermilion-wash disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-150 shrink-0"
+            >
+              {importing ? 'Reading' : pasteReason ? 'Add pasted' : 'Add'}
+            </button>
+          </div>
+
+          {pasteReason && (
+            <div className="mt-4 border-l-2 border-ochre pl-4 animate-fade-in">
+              <p className="text-sm text-ink-soft">{pasteReason}</p>
+              <textarea
+                value={pastedText}
+                onChange={(e) => setPastedText(e.target.value)}
+                rows={7}
+                placeholder="Paste the job description here…"
+                className="w-full mt-3 bg-paper-deep border border-rule px-3 py-2.5 text-sm text-ink placeholder:text-ink-faint/60 outline-none focus:border-vermilion transition-colors duration-150 resize-y"
+              />
+              <p className="field-label mt-2">
+                The link is still saved for the Apply button
+              </p>
+            </div>
+          )}
         </section>
 
         <div className="flex items-center gap-6 mt-5">

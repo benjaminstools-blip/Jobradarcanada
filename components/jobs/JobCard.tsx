@@ -17,6 +17,7 @@ const SOURCE_LABEL: Record<Job['source'], string> = {
   indeed: 'Indeed',
   eluta: 'Eluta',
   workopolis: 'Workopolis',
+  manual: 'Added by you',
 }
 
 export function JobCard({ job, scoreLoading, onApply, onSave, onGenerateDocs }: Props) {
