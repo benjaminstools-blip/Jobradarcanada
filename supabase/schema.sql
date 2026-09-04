@@ -144,3 +144,26 @@ create policy "Users can manage their own generated documents"
   using  (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
+
+-- 6. storage: cvs bucket
+-- Private bucket holding uploaded CV PDFs at cvs/{user_id}/cv.pdf. This was a
+-- manual dashboard step until now, which meant a fresh project got working
+-- tables and a broken upload route. Kept here so one run of this file is enough.
+insert into storage.buckets (id, name, public)
+values ('cvs', 'cvs', false)
+on conflict (id) do nothing;
+
+-- The path's first folder segment is the owner's user id, so a user may read
+-- and write only inside their own folder.
+drop policy if exists "Users can manage their own CV files" on storage.objects;
+create policy "Users can manage their own CV files"
+  on storage.objects for all
+  to authenticated
+  using (
+    bucket_id = 'cvs'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  )
+  with check (
+    bucket_id = 'cvs'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
