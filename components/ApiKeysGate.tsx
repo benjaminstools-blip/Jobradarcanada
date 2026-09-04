@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import { KeyRound, ExternalLink, ArrowRight } from 'lucide-react'
 
 interface Props {
   // Which keys are missing — controls which get-a-key links to highlight.
@@ -13,75 +12,88 @@ interface Props {
 
 export function ApiKeysGate({ needsAnthropic, needsApify, reason }: Props) {
   return (
-    <div
-      className="max-w-xl mx-auto animate-scale-in"
-      style={{
-        background: '#0D1424',
-        border: '1px solid #1E2D3D',
-        borderRadius: 16,
-        padding: '2rem',
-        textAlign: 'center',
-      }}
-    >
-      <div
-        className="mx-auto mb-4 flex items-center justify-center"
-        style={{
-          width: 56, height: 56, borderRadius: 14,
-          background: 'rgba(16,185,129,0.12)',
-          border: '1px solid rgba(16,185,129,0.3)',
-        }}
-      >
-        <KeyRound size={26} color="#34D399" />
-      </div>
+    <section className="max-w-2xl border-t-2 border-vermilion pt-6 animate-rise">
+      <p className="field-label">Blocked</p>
 
-      <h2 className="text-xl font-bold text-white mb-2" style={{ fontFamily: 'Syne, sans-serif' }}>
-        Add your API keys to get started
+      <h2 className="font-display text-3xl mt-3 text-ink">
+        Two keys, then you are running
       </h2>
-      <p className="text-slate-400 text-sm mb-6">
-        {reason ?? 'JobRadar runs on your own API keys.'} They&apos;re free to get and
-        stored privately to your account — set them once in Settings.
+
+      <p className="text-ink-soft mt-4 leading-relaxed">
+        {reason ?? 'Job Canada runs on your own API keys.'} Both are free to
+        obtain and stored privately against your account — set them once in
+        Settings.
       </p>
 
-      <div className="space-y-2 mb-6 text-left">
+      <ol className="mt-8 border-t border-rule">
         {needsAnthropic && (
-          <a
+          <KeyRow
+            index="01"
+            name="Anthropic"
+            note="CV parsing, match scoring, and document generation"
             href="https://console.anthropic.com/settings/keys"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-between rounded-lg px-4 py-3 transition-colors"
-            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
-          >
-            <div>
-              <p className="text-white text-sm font-medium">Anthropic API key</p>
-              <p className="text-slate-500 text-xs">Powers CV parsing, match scoring & AI documents</p>
-            </div>
-            <ExternalLink size={15} className="text-slate-500 shrink-0" />
-          </a>
+          />
         )}
         {needsApify && (
-          <a
+          <KeyRow
+            index="02"
+            name="Apify"
+            note="Live listings from LinkedIn, Indeed, Eluta and Workopolis"
+            aside="$5 free credit"
             href="https://console.apify.com/account/integrations"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-between rounded-lg px-4 py-3 transition-colors"
-            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
-          >
-            <div>
-              <p className="text-white text-sm font-medium">Apify API key <span className="text-[#34D399]">· $5 free credit</span></p>
-              <p className="text-slate-500 text-xs">Fetches live jobs from LinkedIn, Indeed, Eluta & Workopolis</p>
-            </div>
-            <ExternalLink size={15} className="text-slate-500 shrink-0" />
-          </a>
+          />
         )}
-      </div>
+      </ol>
 
       <Link
         href="/settings"
-        className="btn-glow inline-flex items-center justify-center gap-1.5 w-full text-white font-semibold text-sm h-11 rounded-lg"
-        style={{ background: 'linear-gradient(135deg, #10B981, #059669)' }}
+        className="inline-block mt-8 px-7 py-3 text-xs font-medium tracking-widest uppercase bg-vermilion text-paper-raised hover:bg-vermilion-deep transition-colors duration-150"
       >
-        Add keys in Settings <ArrowRight size={15} />
+        Add keys in Settings
       </Link>
-    </div>
+    </section>
+  )
+}
+
+function KeyRow({
+  index,
+  name,
+  note,
+  aside,
+  href,
+}: {
+  index: string
+  name: string
+  note: string
+  aside?: string
+  href: string
+}) {
+  return (
+    <li className="border-b border-rule">
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="row-hover flex items-baseline gap-4 py-4 px-2 -mx-2 group"
+      >
+        <span className="font-mono text-[0.625rem] text-ink-faint tabular-nums">
+          {index}
+        </span>
+        <span className="flex-1">
+          <span className="block text-ink font-medium">
+            {name} API key
+            {aside && (
+              <span className="font-mono text-[0.6875rem] text-forest ml-2">
+                {aside}
+              </span>
+            )}
+          </span>
+          <span className="block text-ink-faint text-xs mt-0.5">{note}</span>
+        </span>
+        <span className="field-label group-hover:text-vermilion transition-colors duration-150">
+          Get key →
+        </span>
+      </a>
+    </li>
   )
 }

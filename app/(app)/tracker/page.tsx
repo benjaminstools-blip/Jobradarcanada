@@ -11,7 +11,6 @@ import {
   closestCenter,
 } from '@dnd-kit/core'
 import { toast } from 'sonner'
-import { Skeleton } from '@/components/ui/skeleton'
 import { KanbanColumn } from '@/components/tracker/KanbanColumn'
 import type { Application, ApplicationStatus } from '@/types'
 
@@ -68,11 +67,16 @@ export default function TrackerPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <Skeleton className="h-10 w-40" style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 8 }} />
-        <div className="flex gap-4">
+      <div>
+        <TrackerMasthead count={null} />
+        <div className="flex gap-4 mt-12 overflow-x-auto">
           {[...Array(6)].map((_, i) => (
-            <Skeleton key={i} className="h-48 w-48 shrink-0" style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 12 }} />
+            <div key={i} className="min-w-[220px] flex-1">
+              <div className="border-t-2 border-rule pt-3 pb-3">
+                <div className="h-2.5 w-20 bg-paper-deep animate-pulse" />
+              </div>
+              <div className="h-40 bg-paper-deep animate-pulse" />
+            </div>
           ))}
         </div>
       </div>
@@ -81,23 +85,26 @@ export default function TrackerPage() {
 
   if (applications.length === 0) {
     return (
-      <div className="space-y-4">
-        <h1 className="text-4xl font-bold text-white animate-fade-up" style={{ fontFamily: 'Syne, sans-serif' }}>Tracker</h1>
-        <p className="text-slate-600 text-sm text-center py-24 animate-fade-in">
-          Apply to jobs from the Job Feed to start tracking.
-        </p>
+      <div className="stagger-in">
+        <TrackerMasthead count={0} />
+        <div className="py-24 text-center">
+          <p className="font-display text-3xl text-ink">No applications yet</p>
+          <p className="text-ink-faint text-sm mt-2">
+            Apply from the feed and cards will appear here.
+          </p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-4xl font-bold text-white animate-fade-up" style={{ fontFamily: 'Syne, sans-serif' }}>Tracker</h1>
+    <div>
+      <TrackerMasthead count={applications.length} />
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <div style={{ display: 'flex', gap: '1rem', overflowX: 'auto', paddingBottom: '1rem' }}>
+        <div className="flex gap-4 overflow-x-auto pb-4 mt-12">
           {COLUMNS.map((status) => (
-            <div key={status} style={{ minWidth: '220px', flexShrink: 0 }}>
+            <div key={status} className="min-w-[220px] flex-1 shrink-0">
               <KanbanColumn
                 status={status}
                 applications={applications.filter((a) => a.status === status)}
@@ -107,5 +114,25 @@ export default function TrackerPage() {
         </div>
       </DndContext>
     </div>
+  )
+}
+
+function TrackerMasthead({ count }: { count: number | null }) {
+  return (
+    <header>
+      <p className="field-label">Pipeline</p>
+      <h1 className="display-title mt-3">Tracker</h1>
+      <div className="title-rule mt-5" />
+      <p className="text-ink-soft mt-4 text-sm">
+        Drag a card between stages to update it.
+        {count !== null && (
+          <>
+            <span aria-hidden className="text-rule-strong mx-2">·</span>
+            <span className="font-mono tabular-nums">{count}</span>
+            <span className="text-ink-faint"> tracked</span>
+          </>
+        )}
+      </p>
+    </header>
   )
 }

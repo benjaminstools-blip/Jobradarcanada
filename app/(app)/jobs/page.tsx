@@ -3,11 +3,6 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { Search, Loader2, Trash2 } from 'lucide-react'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { Progress } from '@/components/ui/progress'
-import { Skeleton } from '@/components/ui/skeleton'
 import { JobCard } from '@/components/jobs/JobCard'
 import { GenerateDocsModal } from '@/components/jobs/GenerateDocsModal'
 import { ApiKeysGate } from '@/components/ApiKeysGate'
@@ -275,175 +270,167 @@ export default function JobsPage() {
 
   if (keysMissing) {
     return (
-      <div className="space-y-6">
-        <div className="animate-fade-up">
-          <h1 className="text-4xl font-bold text-white" style={{ fontFamily: 'Syne, sans-serif' }}>
-            Job{' '}
-            <span style={{ background: 'linear-gradient(135deg, #10B981, #34D399)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-              Feed
-            </span>
-          </h1>
-          <p className="text-slate-500 mt-1 text-sm">Search live jobs from LinkedIn, Indeed, Eluta &amp; Workopolis.</p>
+      <div className="stagger-in">
+        <PageMasthead />
+        <div className="mt-10">
+          <ApiKeysGate
+            needsAnthropic={!apiKeys.data!.anthropic_set}
+            needsApify={!apiKeys.data!.apify_set}
+            reason="Fetching and scoring jobs needs your Anthropic and Apify keys."
+          />
         </div>
-        <ApiKeysGate
-          needsAnthropic={!apiKeys.data!.anthropic_set}
-          needsApify={!apiKeys.data!.apify_set}
-          reason="Fetching and scoring jobs needs your Anthropic + Apify keys."
-        />
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <div className="animate-fade-up">
-        <h1 className="text-4xl font-bold text-white" style={{ fontFamily: 'Syne, sans-serif' }}>
-          Job{' '}
-          <span style={{ background: 'linear-gradient(135deg, #10B981, #34D399)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-            Feed
-          </span>
-        </h1>
-        <p className="text-slate-500 mt-1 text-sm">Search live jobs from LinkedIn, Indeed, Eluta &amp; Workopolis.</p>
-      </div>
+    <div>
+      <div className="stagger-in">
+        <PageMasthead />
 
-      <div className="flex gap-2 flex-col sm:flex-row animate-fade-up" style={{ animationDelay: '60ms' }}>
-        <Input
-          placeholder="Job title (e.g. Product Manager)"
-          value={jobTitle}
-          onChange={(e) => setJobTitle(e.target.value)}
-          className="text-white placeholder:text-slate-600 sm:max-w-xs border-0"
-          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8 }}
-          onKeyDown={(e) => e.key === 'Enter' && !fetching && handleFetch()}
-        />
-        <Input
-          placeholder="City (e.g. Toronto) — optional"
-          value={location}
-          onChange={(e) => setLocation(e.target.value)}
-          className="text-white placeholder:text-slate-600 sm:max-w-xs border-0"
-          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8 }}
-          onKeyDown={(e) => e.key === 'Enter' && !fetching && handleFetch()}
-        />
-        <select
-          value={country}
-          onChange={(e) => setCountry(e.target.value)}
-          aria-label="Country"
-          className="text-white sm:max-w-[11rem] px-3 h-9 text-sm"
-          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8 }}
-        >
-          {INDEED_COUNTRIES.map((c) => (
-            <option key={c.code} value={c.code} style={{ background: '#0D1424', color: '#fff' }}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-        <Button
-          onClick={handleFetch}
-          disabled={fetching}
-          className="btn-glow border-0 text-white font-semibold"
-          style={{ background: 'linear-gradient(135deg, #10B981, #059669)' }}
-        >
-          {fetching ? <Loader2 size={16} className="animate-spin mr-1" /> : <Search size={16} className="mr-1" />}
-          Fetch Jobs
-        </Button>
-        {jobs.length > 0 && (
-          <Button
-            onClick={handleClear}
-            disabled={clearing || fetching}
-            variant="outline"
-            className="border-red-800 text-red-400 hover:bg-red-950/30"
+        {/* Search bar — a ruled instrument panel, not floating inputs. */}
+        <section className="mt-10 border-y border-rule-strong">
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] divide-y md:divide-y-0 md:divide-x divide-rule">
+            <Field label="Role">
+              <input
+                placeholder="Product Manager"
+                value={jobTitle}
+                onChange={(e) => setJobTitle(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && !fetching && handleFetch()}
+                className="w-full bg-transparent text-ink placeholder:text-ink-faint/60 text-lg outline-none"
+              />
+            </Field>
+            <Field label="City">
+              <input
+                placeholder="Toronto — optional"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && !fetching && handleFetch()}
+                className="w-full bg-transparent text-ink placeholder:text-ink-faint/60 text-lg outline-none"
+              />
+            </Field>
+            <Field label="Country">
+              <select
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                aria-label="Country"
+                className="w-full md:w-44 bg-transparent text-ink text-lg outline-none cursor-pointer"
+              >
+                {INDEED_COUNTRIES.map((c) => (
+                  <option key={c.code} value={c.code}>{c.name}</option>
+                ))}
+              </select>
+            </Field>
+          </div>
+        </section>
+
+        <div className="flex items-center gap-6 mt-5">
+          <button
+            onClick={handleFetch}
+            disabled={fetching}
+            className="px-7 py-3 text-xs font-medium tracking-widest uppercase bg-vermilion text-paper-raised hover:bg-vermilion-deep disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-150"
           >
-            {clearing ? <Loader2 size={16} className="animate-spin mr-1" /> : <Trash2 size={16} className="mr-1" />}
-            Clear Jobs
-          </Button>
+            {fetching ? 'Searching' : 'Search'}
+          </button>
+          {jobs.length > 0 && (
+            <button
+              onClick={handleClear}
+              disabled={clearing || fetching}
+              className="field-label hover:text-clay disabled:opacity-40 transition-colors duration-150"
+            >
+              {clearing ? 'Clearing' : 'Clear all'}
+            </button>
+          )}
+          <span className="ml-auto font-mono text-xs text-ink-faint tabular-nums">
+            {jobs.length} {jobs.length === 1 ? 'listing' : 'listings'}
+          </span>
+        </div>
+
+        {fetching && <StatusLine text={fetchStatus} />}
+
+        {scoringProgress && (
+          <StatusLine
+            text={`Scoring ${scoringProgress.done} of ${scoringProgress.total}`}
+            ratio={scoringProgress.done / scoringProgress.total}
+          />
+        )}
+
+        {partialWarning && (
+          <p className="mt-5 border-l-2 border-ochre pl-4 py-1 text-sm text-ink-soft animate-fade-in">
+            {partialWarning}
+          </p>
+        )}
+
+        {showProvinceFilter && !isLoading && (
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-8 pb-4 border-b border-rule">
+            <span className="field-label">Province</span>
+            <ProvinceChip
+              label="All"
+              count={sortedJobs.length}
+              active={provinceFilter === 'all'}
+              onClick={() => setProvinceFilter('all')}
+            />
+            {presentProvinces.map((p) => (
+              <ProvinceChip
+                key={p.code}
+                label={p.code}
+                title={provinceName(p.code)}
+                count={provinceCounts.get(p.code) ?? 0}
+                active={provinceFilter === p.code}
+                onClick={() => setProvinceFilter(p.code)}
+              />
+            ))}
+            {noProvinceCount > 0 && (
+              <ProvinceChip
+                label="Other"
+                title="Remote, nationwide, or no province named"
+                count={noProvinceCount}
+                active={provinceFilter === 'none'}
+                onClick={() => setProvinceFilter('none')}
+              />
+            )}
+          </div>
         )}
       </div>
 
-      {fetching && (
-        <div className="space-y-2 animate-fade-in">
-          <p className="text-slate-400 text-sm">{fetchStatus}</p>
-          <Progress value={0} className="h-1 animate-pulse" style={{ background: 'rgba(16,185,129,0.15)' }} />
-        </div>
-      )}
-
-      {partialWarning && (
-        <div className="bg-amber-900/20 border border-amber-800/50 rounded-xl px-4 py-3 text-amber-400 text-sm animate-fade-in">
-          {partialWarning}
-        </div>
-      )}
-
-      {scoringProgress && (
-        <div className="space-y-1 animate-fade-in">
-          <p className="text-slate-400 text-sm">
-            Scoring {scoringProgress.done} of {scoringProgress.total} jobs…
-          </p>
-          <Progress
-            value={(scoringProgress.done / scoringProgress.total) * 100}
-            className="h-1"
-            style={{ background: 'rgba(16,185,129,0.15)' }}
-          />
-        </div>
-      )}
-
       {!hasCvProfile.data && !hasCvProfile.isLoading && (
-        <div className="text-center py-20 text-slate-600 text-sm animate-fade-in">
-          Upload your CV first to fetch personalized jobs.
-        </div>
+        <EmptyState
+          heading="No CV on file"
+          body="Upload your CV first — jobs are scored against it."
+        />
       )}
 
       {hasCvProfile.data && jobs.length === 0 && !fetching && !isLoading && (
-        <div className="text-center py-20 text-slate-600 text-sm animate-fade-in">
-          Search for a role and location above to see live jobs.
-        </div>
-      )}
-
-      {showProvinceFilter && !isLoading && (
-        <div className="flex flex-wrap gap-2 animate-fade-in">
-          <ProvinceChip
-            label="All"
-            count={sortedJobs.length}
-            active={provinceFilter === 'all'}
-            onClick={() => setProvinceFilter('all')}
-          />
-          {presentProvinces.map((p) => (
-            <ProvinceChip
-              key={p.code}
-              label={p.code}
-              title={provinceName(p.code)}
-              count={provinceCounts.get(p.code) ?? 0}
-              active={provinceFilter === p.code}
-              onClick={() => setProvinceFilter(p.code)}
-            />
-          ))}
-          {noProvinceCount > 0 && (
-            <ProvinceChip
-              label="Other"
-              title="Remote, nationwide, or no province named"
-              count={noProvinceCount}
-              active={provinceFilter === 'none'}
-              onClick={() => setProvinceFilter('none')}
-            />
-          )}
-        </div>
+        <EmptyState
+          heading="Nothing fetched yet"
+          body="Name a role above and search. Results arrive in 30 to 90 seconds."
+        />
       )}
 
       {isLoading ? (
-        <div className="space-y-3">
+        <div className="mt-2">
           {[...Array(3)].map((_, i) => (
-            <Skeleton key={i} className="h-32 w-full" style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 12 }} />
+            <div key={i} className="border-b border-rule py-6 pl-5 flex gap-6">
+              <div className="w-16 h-8 bg-paper-deep animate-pulse" />
+              <div className="flex-1 space-y-3">
+                <div className="h-3 w-24 bg-paper-deep animate-pulse" />
+                <div className="h-6 w-2/3 bg-paper-deep animate-pulse" />
+                <div className="h-3 w-1/3 bg-paper-deep animate-pulse" />
+              </div>
+            </div>
           ))}
         </div>
       ) : (
-        <div className="space-y-3">
-          {visibleJobs.map((job, index) => (
-            <div key={job.id} style={{ animationDelay: `${index * 60}ms` }}>
-              <JobCard
-                job={job}
-                scoreLoading={scoringIds.has(job.id)}
-                onApply={handleApply}
-                onSave={handleSave}
-                onGenerateDocs={handleGenerateDocs}
-              />
-            </div>
+        <div className="mt-2 border-t border-rule">
+          {visibleJobs.map((job) => (
+            <JobCard
+              key={job.id}
+              job={job}
+              scoreLoading={scoringIds.has(job.id)}
+              onApply={handleApply}
+              onSave={handleSave}
+              onGenerateDocs={handleGenerateDocs}
+            />
           ))}
         </div>
       )}
@@ -455,6 +442,54 @@ export default function JobsPage() {
           onOpenChange={(open) => { if (!open) setGenerateDocsJob(null) }}
         />
       )}
+    </div>
+  )
+}
+
+function PageMasthead() {
+  return (
+    <header>
+      <p className="field-label">Live listings</p>
+      <h1 className="display-title mt-3">
+        Job <span className="italic text-vermilion">Feed</span>
+      </h1>
+      <div className="title-rule mt-5" />
+      <p className="text-ink-soft mt-4 max-w-xl text-[1.0625rem] leading-relaxed">
+        Live postings from LinkedIn, Indeed, Eluta and Workopolis, scored against
+        your CV.
+      </p>
+    </header>
+  )
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block px-5 py-4 cursor-text">
+      <span className="field-label block mb-1.5">{label}</span>
+      {children}
+    </label>
+  )
+}
+
+function StatusLine({ text, ratio }: { text: string; ratio?: number }) {
+  return (
+    <div className="mt-5 animate-fade-in">
+      <p className="font-mono text-xs text-ink-soft tabular-nums">{text}</p>
+      <div className="h-[2px] bg-rule mt-2 overflow-hidden">
+        <div
+          className={ratio === undefined ? 'h-full w-1/3 bg-vermilion animate-pulse' : 'h-full bg-vermilion transition-[width] duration-300'}
+          style={ratio === undefined ? undefined : { width: `${ratio * 100}%` }}
+        />
+      </div>
+    </div>
+  )
+}
+
+function EmptyState({ heading, body }: { heading: string; body: string }) {
+  return (
+    <div className="py-24 text-center animate-fade-in">
+      <h2 className="font-display text-3xl text-ink">{heading}</h2>
+      <p className="text-ink-faint text-sm mt-2">{body}</p>
     </div>
   )
 }
@@ -477,15 +512,14 @@ function ProvinceChip({
       onClick={onClick}
       title={title}
       aria-pressed={active}
-      className="px-3 h-7 text-xs font-medium rounded-full transition-colors"
-      style={
+      className={`group flex items-baseline gap-1.5 pb-1 border-b-2 transition-colors duration-150 ${
         active
-          ? { background: 'linear-gradient(135deg, #10B981, #059669)', color: '#fff', border: '1px solid transparent' }
-          : { background: 'rgba(255,255,255,0.04)', color: '#94A3B8', border: '1px solid rgba(255,255,255,0.08)' }
-      }
+          ? 'border-vermilion text-ink'
+          : 'border-transparent text-ink-faint hover:text-ink hover:border-rule-strong'
+      }`}
     >
-      {label}
-      <span className="ml-1.5" style={{ opacity: 0.65 }}>{count}</span>
+      <span className="font-mono text-xs font-medium">{label}</span>
+      <span className="font-mono text-[0.625rem] tabular-nums opacity-60">{count}</span>
     </button>
   )
 }

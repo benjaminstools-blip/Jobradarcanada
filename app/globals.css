@@ -1,5 +1,6 @@
 /* ─── Google Fonts ────────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&display=swap');
+/* Must stay above @import "tailwindcss" — see DESIGN.md. */
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@300..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
 /* ─── Tailwind v4 core ────────────────────────────────────────── */
 @import "tailwindcss";
@@ -10,10 +11,29 @@
 
 /* ─── Tailwind theme tokens ───────────────────────────────────── */
 @theme inline {
-  --font-sans:    'DM Sans', system-ui, sans-serif;
-  --font-heading: 'Syne', system-ui, sans-serif;
-  --font-mono:    var(--font-geist-mono);
+  --font-sans:    'Archivo', system-ui, sans-serif;
+  --font-display: 'Instrument Serif', Georgia, serif;
+  --font-mono:    'IBM Plex Mono', ui-monospace, monospace;
 
+  /* Dossier palette, exposed to Tailwind as bg-paper, text-ink, border-rule … */
+  --color-paper:         var(--paper);
+  --color-paper-deep:    var(--paper-deep);
+  --color-paper-raised:  var(--paper-raised);
+  --color-ink:           var(--ink);
+  --color-ink-soft:      var(--ink-soft);
+  --color-ink-faint:     var(--ink-faint);
+  --color-rule:          var(--rule);
+  --color-rule-strong:   var(--rule-strong);
+  --color-vermilion:     var(--vermilion);
+  --color-vermilion-deep: var(--vermilion-deep);
+  --color-vermilion-wash: var(--vermilion-wash);
+  --color-forest:        var(--forest);
+  --color-ochre:         var(--ochre);
+  --color-clay:          var(--clay);
+  --color-slate-blue:    var(--slate-blue);
+
+  /* shadcn contract — remapped onto the dossier palette so the ui/ primitives
+     inherit the design without being rewritten one by one. */
   --color-background:                  var(--background);
   --color-foreground:                  var(--foreground);
   --color-card:                        var(--card);
@@ -37,171 +57,213 @@
   --color-chart-3:                     var(--chart-3);
   --color-chart-4:                     var(--chart-4);
   --color-chart-5:                     var(--chart-5);
-  --color-sidebar:                     var(--sidebar);
-  --color-sidebar-foreground:          var(--sidebar-foreground);
-  --color-sidebar-primary:             var(--sidebar-primary);
-  --color-sidebar-primary-foreground:  var(--sidebar-primary-foreground);
-  --color-sidebar-accent:              var(--sidebar-accent);
-  --color-sidebar-accent-foreground:   var(--sidebar-accent-foreground);
-  --color-sidebar-border:              var(--sidebar-border);
-  --color-sidebar-ring:                var(--sidebar-ring);
 
-  --radius-sm:  calc(var(--radius) * 0.6);
-  --radius-md:  calc(var(--radius) * 0.8);
-  --radius-lg:  var(--radius);
-  --radius-xl:  calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-sm:  2px;
+  --radius-md:  2px;
+  --radius-lg:  2px;
+  --radius-xl:  3px;
+  --radius-2xl: 3px;
+  --radius-3xl: 4px;
+  --radius-4xl: 4px;
 }
 
-/* ─── Light mode tokens ───────────────────────────────────────── */
+/* ─── Palette ─────────────────────────────────────────────────── */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
+  --paper:          #FBF8F1;
+  --paper-deep:     #F2EDE1;
+  --paper-raised:   #FFFDF8;
+  --ink:            #17130E;
+  --ink-soft:       #554D42;
+  --ink-faint:      #8A8073;
+  --rule:           #DDD5C6;
+  --rule-strong:    #B9AF9C;
 
-/* ─── Dark mode tokens ────────────────────────────────────────── */
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --vermilion:      #C8351A;
+  --vermilion-deep: #9E2712;
+  --vermilion-wash: #F7E4DF;
+  --forest:         #2C6142;
+  --ochre:          #A8721A;
+  --clay:           #A33A28;
+  --slate-blue:     #2B4A6F;
+
+  /* shadcn contract */
+  --background:            var(--paper);
+  --foreground:            var(--ink);
+  --card:                  var(--paper);
+  --card-foreground:       var(--ink);
+  --popover:               var(--paper-raised);
+  --popover-foreground:    var(--ink);
+  --primary:               var(--vermilion);
+  --primary-foreground:    #FFFDF8;
+  --secondary:             var(--paper-deep);
+  --secondary-foreground:  var(--ink);
+  --muted:                 var(--paper-deep);
+  --muted-foreground:      var(--ink-faint);
+  --accent:                var(--vermilion-wash);
+  --accent-foreground:     var(--ink);
+  --destructive:           var(--clay);
+  --border:                var(--rule);
+  --input:                 var(--rule);
+  --ring:                  var(--vermilion);
+
+  --chart-1: var(--vermilion);
+  --chart-2: var(--slate-blue);
+  --chart-3: var(--forest);
+  --chart-4: var(--ochre);
+  --chart-5: var(--ink-soft);
+
+  --radius: 2px;
 }
 
 /* ─── Base layer ──────────────────────────────────────────────── */
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
+    outline-color: var(--vermilion);
   }
-  body {
-    @apply bg-background text-foreground;
-    font-family: 'DM Sans', system-ui, sans-serif;
-  }
+
   html {
-    font-family: 'DM Sans', system-ui, sans-serif;
+    font-family: 'Archivo', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
+
+  body {
+    background-color: var(--paper);
+    color: var(--ink);
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    font-feature-settings: 'kern' 1;
+  }
+
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Syne', system-ui, sans-serif;
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+
+  /* Codes and numbers align in columns or they are not data. */
+  code, kbd, samp, pre, .font-mono {
+    font-variant-numeric: tabular-nums;
+  }
+
+  ::selection {
+    background: var(--vermilion);
+    color: #FFFDF8;
+  }
+
+  /* Focus is a hard rule, never a glow. */
+  :focus-visible {
+    outline: 2px solid var(--vermilion);
+    outline-offset: 2px;
   }
 }
 
+/* ─── Paper grain ─────────────────────────────────────────────── */
+/* The one texture in the system. Fixed, inert, ~3%. See DESIGN.md. */
+.grain::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
 /* ─── Keyframes ───────────────────────────────────────────────── */
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(20px); }
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
-@keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.92); }
-  to   { opacity: 1; transform: scale(1); }
-}
-@keyframes glowPulse {
-  0%, 100% { box-shadow: 0 0 8px 0 rgba(16, 185, 129, 0.4); }
-  50%       { box-shadow: 0 0 22px 4px rgba(16, 185, 129, 0.75); }
-}
-@keyframes gradientShift {
-  0%   { background-position: 0%   50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0%   50%; }
+@keyframes drawRule {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
 }
 
-/* ─── Animation & utility classes ────────────────────────────── */
+/* ─── Utilities ───────────────────────────────────────────────── */
 @layer utilities {
-  .animate-fade-up {
-    animation: fadeUp 0.5s ease both;
-  }
-  .animate-fade-in {
-    animation: fadeIn 0.4s ease both;
-  }
-  .animate-scale-in {
-    animation: scaleIn 0.35s ease both;
-  }
-  .animate-glow-pulse {
-    animation: glowPulse 2.4s ease-in-out infinite;
-  }
-  .animate-gradient-shift {
-    background-size: 300% 300%;
-    animation: gradientShift 8s ease infinite;
+  /* The dossier field label — small, tracked, faint. Used everywhere. */
+  .field-label {
+    font-size: 0.6875rem;
+    line-height: 1.3;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 500;
   }
 
-  .card-hover {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
-  .card-hover:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 32px rgba(16, 185, 129, 0.12);
+  .display-title {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-weight: 400;
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    line-height: 0.95;
+    letter-spacing: -0.02em;
   }
 
-  .btn-glow {
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
-    transition: box-shadow 0.25s ease, transform 0.15s ease;
+  .title-rule {
+    border-bottom: 2px solid var(--ink);
   }
-  .btn-glow:hover {
-    box-shadow: 0 0 20px 4px rgba(16, 185, 129, 0.5);
-    transform: translateY(-1px);
+
+  .page-frame {
+    max-width: 1240px;
+    margin-inline: auto;
+    padding-inline: clamp(20px, 5vw, 56px);
   }
-  .btn-glow:active {
-    transform: translateY(0);
+
+  /* One orchestrated entrance per page. Children rise on a 40ms cadence. */
+  .stagger-in > * {
+    animation: riseIn 0.4s cubic-bezier(0.2, 0, 0, 1) both;
+  }
+  .stagger-in > *:nth-child(1)  { animation-delay: 0ms; }
+  .stagger-in > *:nth-child(2)  { animation-delay: 40ms; }
+  .stagger-in > *:nth-child(3)  { animation-delay: 80ms; }
+  .stagger-in > *:nth-child(4)  { animation-delay: 120ms; }
+  .stagger-in > *:nth-child(5)  { animation-delay: 160ms; }
+  .stagger-in > *:nth-child(6)  { animation-delay: 200ms; }
+  .stagger-in > *:nth-child(7)  { animation-delay: 240ms; }
+  .stagger-in > *:nth-child(8)  { animation-delay: 280ms; }
+  .stagger-in > *:nth-child(n+9) { animation-delay: 320ms; }
+
+  .animate-rise    { animation: riseIn 0.4s cubic-bezier(0.2, 0, 0, 1) both; }
+  .animate-fade-in { animation: fadeIn 0.3s ease both; }
+  .animate-draw    { animation: drawRule 0.5s cubic-bezier(0.2, 0, 0, 1) both; transform-origin: left; }
+
+  /* Rows shift ground on hover. No lift, no shadow, no glow. */
+  .row-hover {
+    transition: background-color 160ms cubic-bezier(0.2, 0, 0, 1),
+                border-color 160ms cubic-bezier(0.2, 0, 0, 1);
+  }
+  .row-hover:hover {
+    background-color: var(--paper-deep);
+    border-color: var(--rule-strong);
+  }
+
+  .link-underline {
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+    transition: color 160ms ease;
+  }
+  .link-underline:hover {
+    color: var(--vermilion);
+    text-decoration-line: underline;
+  }
+}
+
+/* ─── Reduced motion ──────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .stagger-in > *,
+  .animate-rise,
+  .animate-fade-in,
+  .animate-draw {
+    animation: fadeIn 0.2s ease both !important;
+    transform: none !important;
+  }
+  * {
+    transition-duration: 0.01ms !important;
   }
 }

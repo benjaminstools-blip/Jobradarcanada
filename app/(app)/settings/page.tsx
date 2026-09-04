@@ -2,11 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { CheckCircle, XCircle, Loader2, Eye, EyeOff } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { maskKey } from '@/lib/utils'
 
 type TestState = 'idle' | 'loading' | 'ok' | 'fail'
@@ -18,11 +13,87 @@ interface TestStatus {
 
 // Module scope, not nested in SettingsPage — a component declared during render
 // is a fresh type on every pass, so React unmounts and remounts it each time.
-function TestIcon({ status }: { status: TestState }) {
-  if (status === 'loading') return <Loader2 size={14} className="animate-spin text-slate-400" />
-  if (status === 'ok') return <CheckCircle size={14} className="text-[#10B981]" />
-  if (status === 'fail') return <XCircle size={14} className="text-red-400" />
-  return null
+function TestStatusLabel({ status }: { status: TestState }) {
+  if (status === 'idle') return null
+  const map: Record<Exclude<TestState, 'idle'>, { text: string; color: string }> = {
+    loading: { text: 'Testing', color: 'var(--ink-faint)' },
+    ok: { text: 'Valid', color: 'var(--forest)' },
+    fail: { text: 'Rejected', color: 'var(--clay)' },
+  }
+  const { text, color } = map[status]
+  return (
+    <span className="field-label" style={{ color }}>
+      {text}
+    </span>
+  )
+}
+
+/** One key row: label, stored preview, masked input, test control. */
+function KeyRow({
+  label,
+  index,
+  placeholder,
+  value,
+  onChange,
+  preview,
+  show,
+  onToggleShow,
+  status,
+  onTest,
+}: {
+  label: string
+  index: string
+  placeholder: string
+  value: string
+  onChange: (v: string) => void
+  preview: string | null
+  show: boolean
+  onToggleShow: () => void
+  status: TestState
+  onTest: () => void
+}) {
+  return (
+    <div className="border-b border-rule py-7">
+      <div className="flex items-baseline justify-between gap-4 mb-3">
+        <div className="flex items-baseline gap-3">
+          <span className="font-mono text-[0.625rem] text-ink-faint tabular-nums">{index}</span>
+          <span className="field-label text-ink">{label}</span>
+        </div>
+        <TestStatusLabel status={status} />
+      </div>
+
+      {preview && (
+        <p className="font-mono text-xs text-ink-faint mb-3">Stored: {preview}</p>
+      )}
+
+      <div className="flex gap-3">
+        <div className="relative flex-1">
+          <input
+            type={show ? 'text' : 'password'}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            className="w-full bg-paper-deep border border-rule px-3 py-2.5 pr-16 font-mono text-sm text-ink placeholder:text-ink-faint/60 outline-none focus:border-vermilion transition-colors duration-150"
+          />
+          <button
+            type="button"
+            onClick={onToggleShow}
+            className="absolute right-3 top-1/2 -translate-y-1/2 field-label hover:text-ink transition-colors duration-150"
+          >
+            {show ? 'Hide' : 'Show'}
+          </button>
+        </div>
+        <button
+          type="button"
+          onClick={onTest}
+          disabled={status === 'loading'}
+          className="px-5 border border-ink text-ink text-xs font-medium tracking-widest uppercase hover:bg-vermilion-wash disabled:opacity-40 transition-colors duration-150"
+        >
+          Test
+        </button>
+      </div>
+    </div>
+  )
 }
 
 export default function SettingsPage() {
@@ -98,106 +169,80 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="max-w-lg space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Settings</h1>
-        <p className="text-slate-400 mt-1">
-          JobRadar runs on your own API keys — both are required. They&apos;re free to get:{' '}
-          <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer" className="text-[#34D399] hover:underline">Anthropic key</a>
+    <div className="stagger-in max-w-2xl">
+      <header>
+        <p className="field-label">Configuration</p>
+        <h1 className="display-title mt-3">Settings</h1>
+        <div className="title-rule mt-5" />
+        <p className="text-ink-soft mt-4 leading-relaxed">
+          Job Canada runs on your own API keys — both are required. Each is free
+          to obtain:{' '}
+          <a
+            href="https://console.anthropic.com/settings/keys"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="link-underline text-ink"
+          >
+            Anthropic
+          </a>
           {' · '}
-          <a href="https://console.apify.com/account/integrations" target="_blank" rel="noopener noreferrer" className="text-[#34D399] hover:underline">Apify key</a>.
+          <a
+            href="https://console.apify.com/account/integrations"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="link-underline text-ink"
+          >
+            Apify
+          </a>
         </p>
-      </div>
+      </header>
 
-      <Card className="bg-slate-900 border-slate-700">
-        <CardHeader>
-          <CardTitle className="text-white text-base">API Keys</CardTitle>
-          <CardDescription className="text-slate-400">
-            Keys are stored per-user in Supabase and never exposed to other users.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          {/* Anthropic */}
-          <div className="space-y-2">
-            <Label className="text-slate-300">Anthropic API Key</Label>
-            {savedAnthropicPreview && (
-              <p className="text-slate-500 text-xs font-mono">Current: {savedAnthropicPreview}</p>
-            )}
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Input
-                  type={showAnthropic ? 'text' : 'password'}
-                  value={anthropicKey}
-                  onChange={(e) => setAnthropicKey(e.target.value)}
-                  placeholder="sk-ant-..."
-                  className="bg-slate-800 border-slate-600 text-white placeholder:text-slate-500 pr-9"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowAnthropic(!showAnthropic)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
-                >
-                  {showAnthropic ? <EyeOff size={14} /> : <Eye size={14} />}
-                </button>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => testKey('anthropic')}
-                disabled={testStatus.anthropic === 'loading'}
-                className="border-slate-600 text-slate-300 hover:text-white hover:bg-slate-800"
-              >
-                <TestIcon status={testStatus.anthropic} />
-                <span className="ml-1">Test</span>
-              </Button>
-            </div>
-          </div>
+      <section className="mt-12">
+        <div className="flex items-baseline justify-between gap-4 pb-3 border-b-2 border-ink">
+          <h2 className="font-display text-2xl text-ink">API keys</h2>
+          <span className="field-label">Per account</span>
+        </div>
 
-          {/* Apify */}
-          <div className="space-y-2">
-            <Label className="text-slate-300">Apify API Key</Label>
-            {savedApifyPreview && (
-              <p className="text-slate-500 text-xs font-mono">Current: {savedApifyPreview}</p>
-            )}
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Input
-                  type={showApify ? 'text' : 'password'}
-                  value={apifyKey}
-                  onChange={(e) => setApifyKey(e.target.value)}
-                  placeholder="apify_api_..."
-                  className="bg-slate-800 border-slate-600 text-white placeholder:text-slate-500 pr-9"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowApify(!showApify)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
-                >
-                  {showApify ? <EyeOff size={14} /> : <Eye size={14} />}
-                </button>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => testKey('apify')}
-                disabled={testStatus.apify === 'loading'}
-                className="border-slate-600 text-slate-300 hover:text-white hover:bg-slate-800"
-              >
-                <TestIcon status={testStatus.apify} />
-                <span className="ml-1">Test</span>
-              </Button>
-            </div>
-          </div>
+        <KeyRow
+          index="01"
+          label="Anthropic"
+          placeholder="sk-ant-..."
+          value={anthropicKey}
+          onChange={setAnthropicKey}
+          preview={savedAnthropicPreview}
+          show={showAnthropic}
+          onToggleShow={() => setShowAnthropic(!showAnthropic)}
+          status={testStatus.anthropic}
+          onTest={() => testKey('anthropic')}
+        />
 
-          <Button
+        <KeyRow
+          index="02"
+          label="Apify"
+          placeholder="apify_api_..."
+          value={apifyKey}
+          onChange={setApifyKey}
+          preview={savedApifyPreview}
+          show={showApify}
+          onToggleShow={() => setShowApify(!showApify)}
+          status={testStatus.apify}
+          onTest={() => testKey('apify')}
+        />
+
+        <div className="flex items-center gap-6 mt-7">
+          <button
             onClick={handleSave}
             disabled={saving || (!anthropicKey && !apifyKey)}
-            className="w-full bg-[#10B981] hover:bg-[#059669] text-white"
+            className="px-7 py-3 text-xs font-medium tracking-widest uppercase bg-vermilion text-paper-raised hover:bg-vermilion-deep disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-150"
           >
-            {saving ? 'Saving…' : 'Save keys'}
-          </Button>
-        </CardContent>
-      </Card>
+            {saving ? 'Saving' : 'Save keys'}
+          </button>
+          <p className="text-ink-faint text-xs max-w-xs leading-relaxed">
+            Stored per user in Supabase, never exposed to other accounts. Only
+            keys you retype are sent.
+          </p>
+        </div>
+      </section>
     </div>
   )
 }

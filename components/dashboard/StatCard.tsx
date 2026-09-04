@@ -1,6 +1,4 @@
-import { Skeleton } from '@/components/ui/skeleton'
-
-type Accent = 'green' | 'cyan' | 'indigo'
+type Accent = 'vermilion' | 'slate' | 'forest'
 
 interface Props {
   label: string
@@ -10,51 +8,31 @@ interface Props {
   accent?: Accent
 }
 
-const ACCENT_TOP: Record<Accent, string> = {
-  green:  '#10B981',
-  cyan:   '#06B6D4',
-  indigo: '#6366F1',
+const ACCENT: Record<Accent, string> = {
+  vermilion: 'var(--vermilion)',
+  slate: 'var(--slate-blue)',
+  forest: 'var(--forest)',
 }
 
-const ACCENT_GRADIENT: Record<Accent, string> = {
-  green:  'linear-gradient(135deg, #10B981, #34D399)',
-  cyan:   'linear-gradient(135deg, #06B6D4, #22D3EE)',
-  indigo: 'linear-gradient(135deg, #6366F1, #818CF8)',
-}
-
-export function StatCard({ label, value, sub, loading, accent = 'green' }: Props) {
+/** A ruled statistic, not a card. Colour appears only as a 2px top edge. */
+export function StatCard({ label, value, sub, loading, accent = 'vermilion' }: Props) {
   return (
     <div
-      className="card-hover animate-fade-up"
-      style={{
-        background: '#0D1424',
-        border: '1px solid #1E2D3D',
-        borderTop: `2px solid ${ACCENT_TOP[accent]}`,
-        borderRadius: 12,
-        padding: '1.25rem 1.5rem',
-      }}
+      className="pt-5 border-t-2"
+      style={{ borderTopColor: ACCENT[accent] }}
     >
       {loading ? (
         <div className="space-y-3">
-          <Skeleton className="h-3 w-24" style={{ background: 'rgba(255,255,255,0.06)' }} />
-          <Skeleton className="h-10 w-20" style={{ background: 'rgba(255,255,255,0.06)' }} />
+          <div className="h-2.5 w-24 bg-paper-deep animate-pulse" />
+          <div className="h-10 w-20 bg-paper-deep animate-pulse" />
         </div>
       ) : (
         <>
-          <p className="text-slate-500 text-xs uppercase tracking-widest mb-2 font-medium">{label}</p>
-          <p
-            className="text-4xl font-bold leading-none"
-            style={{
-              fontFamily: 'Syne, sans-serif',
-              background: ACCENT_GRADIENT[accent],
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}
-          >
+          <p className="field-label">{label}</p>
+          <p className="font-mono text-5xl leading-none tabular-nums mt-3 text-ink">
             {value}
           </p>
-          {sub && <p className="text-slate-600 text-xs mt-2">{sub}</p>}
+          {sub && <p className="text-ink-faint text-xs mt-3">{sub}</p>}
         </>
       )}
     </div>

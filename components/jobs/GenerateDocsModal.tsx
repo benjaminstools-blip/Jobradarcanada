@@ -2,11 +2,8 @@
 
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, Copy, Sparkles, Download, RefreshCw } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import ReactMarkdown from 'react-markdown'
 import type { Job, DocumentType } from '@/types'
@@ -56,127 +53,71 @@ function DocActions({
   const [copied, setCopied] = useState(false)
 
   return (
-    <div style={{ display: 'flex', gap: 6, marginBottom: 10, justifyContent: 'flex-end' }}>
-      <Button
-        size="sm"
-        style={{
-          background: 'rgba(255,255,255,0.06)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          color: '#94A3B8',
-          padding: '0 10px',
-          height: 30,
-          fontSize: 12,
-        }}
+    <div className="flex items-center gap-5 justify-end pb-3 mb-4 border-b border-rule">
+      <button
         onClick={onRegenerate}
         disabled={regenerating}
+        className="field-label hover:text-ink disabled:opacity-40 transition-colors duration-150"
       >
-        <RefreshCw size={11} style={{ marginRight: 4, opacity: regenerating ? 0.5 : 1 }} />
-        {regenerating ? 'Regenerating…' : 'Regenerate'}
-      </Button>
-      <Button
-        size="sm"
-        style={{
-          background: 'rgba(255,255,255,0.06)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          color: '#94A3B8',
-          padding: '0 10px',
-          height: 30,
-          fontSize: 12,
-        }}
+        {regenerating ? 'Regenerating' : 'Regenerate'}
+      </button>
+      <button
         onClick={() => downloadTxt(content, filename)}
+        className="field-label hover:text-ink transition-colors duration-150"
       >
-        <Download size={11} style={{ marginRight: 4 }} />
         Download
-      </Button>
-      <Button
-        size="sm"
-        style={{
-          background: copied ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.06)',
-          border: `1px solid ${copied ? 'rgba(16,185,129,0.5)' : 'rgba(255,255,255,0.1)'}`,
-          color: copied ? '#10B981' : '#94A3B8',
-          padding: '0 10px',
-          height: 30,
-          fontSize: 12,
-          transition: 'all 0.2s',
-        }}
+      </button>
+      <button
         onClick={() => {
           navigator.clipboard.writeText(content)
           setCopied(true)
           toast.success('Copied to clipboard')
           setTimeout(() => setCopied(false), 2000)
         }}
+        className="field-label transition-colors duration-150"
+        style={{ color: copied ? 'var(--forest)' : undefined }}
       >
-        {copied ? <Check size={11} style={{ marginRight: 4 }} /> : <Copy size={11} style={{ marginRight: 4 }} />}
         {copied ? 'Copied' : 'Copy'}
-      </Button>
+      </button>
     </div>
   )
 }
 
 function LoadingSkeleton() {
   return (
-    <div style={{ padding: '12px 0' }}>
+    <div className="py-4">
       {[100, 88, 94, 72, 85].map((w, i) => (
-        <Skeleton
+        <div
           key={i}
-          style={{
-            height: 12,
-            width: `${w}%`,
-            background: 'rgba(255,255,255,0.06)',
-            marginBottom: 10,
-            borderRadius: 4,
-          }}
+          className="h-3 bg-paper-deep animate-pulse mb-3"
+          style={{ width: `${w}%` }}
         />
       ))}
-      <p style={{ color: '#475569', fontSize: 12, marginTop: 8 }}>Generating with AI…</p>
+      <p className="field-label mt-5">Writing with Claude</p>
     </div>
   )
 }
 
 function DocDisplay({ content }: { content: string }) {
   return (
-    <div
-      style={{
-        background: 'rgba(255,255,255,0.02)',
-        border: '1px solid #1E2D3D',
-        borderRadius: 8,
-        padding: '20px 20px',
-        maxHeight: 420,
-        overflowY: 'auto',
-        color: '#CBD5E1',
-        fontSize: 13,
-        lineHeight: 1.8,
-      }}
-    >
+    <div className="bg-paper-raised border border-rule px-8 py-8 max-h-[420px] overflow-y-auto text-ink-soft text-[0.9375rem] leading-[1.75]">
       <ReactMarkdown
         components={{
           h1: ({ children }) => (
-            <h1 style={{ color: '#F1F5F9', fontSize: 16, fontWeight: 700, marginBottom: 4, marginTop: 0 }}>{children}</h1>
+            <h1 className="font-display text-3xl text-ink leading-tight mb-1 mt-0">{children}</h1>
           ),
           h2: ({ children }) => (
-            <h2 style={{ color: '#E2E8F0', fontSize: 14, fontWeight: 600, marginTop: 16, marginBottom: 6, borderBottom: '1px solid #1E2D3D', paddingBottom: 4 }}>{children}</h2>
+            <h2 className="field-label text-ink mt-7 mb-3 pb-2 border-b border-rule">{children}</h2>
           ),
           h3: ({ children }) => (
-            <h3 style={{ color: '#CBD5E1', fontSize: 13, fontWeight: 600, marginTop: 12, marginBottom: 4 }}>{children}</h3>
+            <h3 className="text-ink font-semibold text-sm mt-5 mb-1.5">{children}</h3>
           ),
-          p: ({ children }) => (
-            <p style={{ margin: '0 0 10px', color: '#CBD5E1' }}>{children}</p>
-          ),
-          ul: ({ children }) => (
-            <ul style={{ margin: '4px 0 10px', paddingLeft: 18 }}>{children}</ul>
-          ),
-          li: ({ children }) => (
-            <li style={{ marginBottom: 3, color: '#94A3B8' }}>{children}</li>
-          ),
-          strong: ({ children }) => (
-            <strong style={{ color: '#E2E8F0', fontWeight: 600 }}>{children}</strong>
-          ),
-          em: ({ children }) => (
-            <em style={{ color: '#94A3B8' }}>{children}</em>
-          ),
-          hr: () => (
-            <hr style={{ border: 'none', borderTop: '1px solid #1E2D3D', margin: '12px 0' }} />
-          ),
+          p: ({ children }) => <p className="mb-3.5">{children}</p>,
+          ul: ({ children }) => <ul className="my-2 mb-4 pl-5 list-disc marker:text-rule-strong">{children}</ul>,
+          li: ({ children }) => <li className="mb-1.5">{children}</li>,
+          strong: ({ children }) => <strong className="text-ink font-semibold">{children}</strong>,
+          em: ({ children }) => <em className="text-ink-faint">{children}</em>,
+          hr: () => <hr className="border-0 border-t border-rule my-5" />,
         }}
       >
         {content}
@@ -234,59 +175,44 @@ export function GenerateDocsModal({ job, open, onOpenChange }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent
-        style={{
-          background: '#0D1424',
-          border: '1px solid #1E2D3D',
-          maxWidth: 720,
-          maxHeight: '90vh',
-          overflowY: 'auto',
-        }}
-      >
-        <DialogHeader>
-          <DialogTitle
-            style={{
-              color: '#fff',
-              fontFamily: 'Syne, sans-serif',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              fontSize: 16,
-            }}
-          >
-            <Sparkles size={16} color="#10B981" />
-            AI Documents
+      <DialogContent className="bg-paper border border-ink max-w-3xl max-h-[90vh] overflow-y-auto rounded-none p-8">
+        <DialogHeader className="space-y-0 text-left">
+          <p className="field-label">Generated for</p>
+          <DialogTitle className="font-display text-3xl text-ink leading-tight mt-2">
+            {job.job_title}
           </DialogTitle>
-          <p style={{ color: '#64748B', fontSize: 13, margin: 0 }}>
-            {job.job_title}{job.company_name ? ` · ${job.company_name}` : ''}
-          </p>
+          {job.company_name && (
+            <p className="text-ink-soft text-sm mt-1">{job.company_name}</p>
+          )}
+          <div className="title-rule mt-5" />
         </DialogHeader>
 
         <Tabs
           value={activeTab}
           onValueChange={(value) => setActiveTab(value as DocumentType)}
-          style={{ marginTop: 8 }}
+          className="mt-6"
         >
-          <TabsList
-            style={{
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid #1E2D3D',
-              borderRadius: 8,
-              padding: 3,
-            }}
-          >
-            <TabsTrigger value="cover_letter" style={{ fontSize: 13, borderRadius: 6 }}>
-              Cover Letter
+          <TabsList className="bg-transparent border-0 rounded-none p-0 h-auto gap-6 justify-start">
+            <TabsTrigger
+              value="cover_letter"
+              className="rounded-none border-0 border-b-2 border-transparent data-[state=active]:border-vermilion data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0 pb-2 text-xs uppercase tracking-widest font-medium text-ink-faint data-[state=active]:text-ink"
+            >
+              Cover letter
             </TabsTrigger>
-            <TabsTrigger value="tailored_cv" style={{ fontSize: 13, borderRadius: 6 }}>
+            <TabsTrigger
+              value="tailored_cv"
+              className="rounded-none border-0 border-b-2 border-transparent data-[state=active]:border-vermilion data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0 pb-2 text-xs uppercase tracking-widest font-medium text-ink-faint data-[state=active]:text-ink"
+            >
               Tailored CV
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="cover_letter" style={{ marginTop: 12 }}>
+          <TabsContent value="cover_letter" className="mt-6">
             {coverLetter.isPending && <LoadingSkeleton />}
             {coverLetter.isError && (
-              <p style={{ color: '#EF4444', fontSize: 13 }}>{coverLetter.error.message}</p>
+              <p className="border-l-2 border-clay pl-3 py-1 text-sm text-clay">
+                {coverLetter.error.message}
+              </p>
             )}
             {coverLetter.data && (
               <>
@@ -301,10 +227,12 @@ export function GenerateDocsModal({ job, open, onOpenChange }: Props) {
             )}
           </TabsContent>
 
-          <TabsContent value="tailored_cv" style={{ marginTop: 12 }}>
+          <TabsContent value="tailored_cv" className="mt-6">
             {tailoredCv.isPending && <LoadingSkeleton />}
             {tailoredCv.isError && (
-              <p style={{ color: '#EF4444', fontSize: 13 }}>{tailoredCv.error.message}</p>
+              <p className="border-l-2 border-clay pl-3 py-1 text-sm text-clay">
+                {tailoredCv.error.message}
+              </p>
             )}
             {tailoredCv.data && (
               <>

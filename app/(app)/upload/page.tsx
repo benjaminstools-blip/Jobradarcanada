@@ -3,9 +3,6 @@
 import { useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { Upload, RefreshCw } from 'lucide-react'
-import { Progress } from '@/components/ui/progress'
-import { Skeleton } from '@/components/ui/skeleton'
 import { CVProfileCard } from '@/components/cv/CVProfileCard'
 import { ApiKeysGate } from '@/components/ApiKeysGate'
 import type { CVProfile } from '@/types'
@@ -80,30 +77,46 @@ export default function UploadPage() {
 
   if (!apiKeys.isLoading && apiKeys.data && !apiKeys.data.anthropic_set) {
     return (
-      <div className="max-w-2xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Upload CV</h1>
-          <p className="text-slate-400 mt-1">Upload your CV as a PDF and we&apos;ll extract your profile automatically.</p>
+      <div className="stagger-in">
+        <UploadMasthead />
+        <div className="mt-10">
+          <ApiKeysGate
+            needsAnthropic
+            needsApify={false}
+            reason="Parsing your CV needs your Anthropic key."
+          />
         </div>
-        <ApiKeysGate needsAnthropic needsApify={false} reason="Parsing your CV needs your Anthropic key." />
       </div>
     )
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Upload CV</h1>
-        <p className="text-slate-400 mt-1">Upload your CV as a PDF and we&apos;ll extract your profile automatically.</p>
-      </div>
+    <div>
+      <div className="stagger-in max-w-3xl">
+        <UploadMasthead />
 
-      <div
-        className="border-2 border-dashed border-slate-600 rounded-xl p-10 text-center hover:border-[#10B981] transition-colors cursor-pointer group"
-        onClick={() => !uploading && fileInputRef.current?.click()}
-      >
-        <Upload className="mx-auto mb-3 text-slate-500 group-hover:text-[#10B981] transition-colors" size={36} />
-        <p className="text-slate-300 font-medium">Click to upload your CV</p>
-        <p className="text-slate-500 text-sm mt-1">PDF only, max 5MB</p>
+        {/* Dropzone as a ruled plate, not a dashed box. */}
+        <button
+          type="button"
+          onClick={() => !uploading && fileInputRef.current?.click()}
+          disabled={uploading}
+          className="group w-full mt-10 border border-rule-strong bg-paper-deep hover:bg-vermilion-wash hover:border-vermilion disabled:cursor-not-allowed transition-colors duration-150 text-left"
+        >
+          <div className="flex items-baseline justify-between gap-6 px-6 py-10">
+            <div>
+              <p className="font-display text-3xl text-ink leading-none">
+                {profile ? 'Replace your CV' : 'Add your CV'}
+              </p>
+              <p className="text-ink-soft text-sm mt-3">
+                Claude reads it and builds your profile — occupation, NOC code, skills.
+              </p>
+            </div>
+            <span className="field-label group-hover:text-vermilion transition-colors duration-150 shrink-0">
+              PDF · 5 MB max
+            </span>
+          </div>
+        </button>
+
         <input
           ref={fileInputRef}
           type="file"
@@ -112,33 +125,55 @@ export default function UploadPage() {
           onChange={handleFileChange}
           disabled={uploading}
         />
+
+        {uploading && (
+          <div className="mt-5 animate-fade-in">
+            <p className="font-mono text-xs text-ink-soft tabular-nums">
+              Parsing with Claude — {uploadProgress}%
+            </p>
+            <div className="h-[2px] bg-rule mt-2 overflow-hidden">
+              <div
+                className="h-full bg-vermilion transition-[width] duration-300"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
-      {uploading && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-slate-300 text-sm">
-            <RefreshCw size={14} className="animate-spin" />
-            <span>Uploading and parsing your CV with AI…</span>
+      <div className="mt-16 max-w-3xl">
+        {isLoading ? (
+          <div className="space-y-4">
+            <div className="h-2.5 w-20 bg-paper-deep animate-pulse" />
+            <div className="h-10 w-2/3 bg-paper-deep animate-pulse" />
+            <div className="h-24 w-full bg-paper-deep animate-pulse" />
           </div>
-          <Progress value={uploadProgress} className="h-1.5 bg-slate-800" />
-        </div>
-      )}
-
-      {isLoading ? (
-        <div className="space-y-3">
-          <Skeleton className="h-6 w-40 bg-slate-800" />
-          <Skeleton className="h-24 w-full bg-slate-800" />
-          <Skeleton className="h-16 w-full bg-slate-800" />
-        </div>
-      ) : profile ? (
-        <CVProfileCard profile={profile} />
-      ) : (
-        !uploading && (
-          <p className="text-slate-500 text-sm text-center py-4">
-            No CV uploaded yet. Upload a PDF above to get started.
-          </p>
-        )
-      )}
+        ) : profile ? (
+          <CVProfileCard profile={profile} />
+        ) : (
+          !uploading && (
+            <p className="field-label text-center py-12">
+              Nothing on file yet
+            </p>
+          )
+        )}
+      </div>
     </div>
+  )
+}
+
+function UploadMasthead() {
+  return (
+    <header>
+      <p className="field-label">Step one</p>
+      <h1 className="display-title mt-3">
+        Your <span className="italic text-vermilion">CV</span>
+      </h1>
+      <div className="title-rule mt-5" />
+      <p className="text-ink-soft mt-4 max-w-xl text-[1.0625rem] leading-relaxed">
+        Everything downstream — match scores, cover letters, tailored CVs — is
+        built from this document and nothing else.
+      </p>
+    </header>
   )
 }

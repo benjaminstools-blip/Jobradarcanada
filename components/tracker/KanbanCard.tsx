@@ -11,7 +11,8 @@ export function KanbanCard({ application }: { application: Application }) {
     id: application.id,
   })
 
-  // dnd-kit style MUST stay on the outer div
+  // dnd-kit style MUST stay on the outer div — the inner div owns the visuals,
+  // or the drag transform overwrites them.
   const dndStyle = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -21,30 +22,22 @@ export function KanbanCard({ application }: { application: Application }) {
   const job = application.job
 
   return (
-    <div
-      ref={setNodeRef}
-      style={dndStyle}
-      {...attributes}
-      {...listeners}
-      className="card-hover touch-none"
-    >
+    <div ref={setNodeRef} style={dndStyle} {...attributes} {...listeners} className="touch-none">
       <div
-        style={{
-          background: isDragging ? 'rgba(16,185,129,0.1)' : '#0D1424',
-          border: isDragging ? '1px solid rgba(16,185,129,0.4)' : '1px solid #1E2D3D',
-          borderRadius: 10,
-          padding: '0.75rem',
-          cursor: 'grab',
-          boxShadow: isDragging ? '0 12px 32px rgba(0,0,0,0.5)' : '0 1px 3px rgba(0,0,0,0.3)',
-        }}
+        className={`border px-3 py-3 cursor-grab active:cursor-grabbing transition-colors duration-150 ${
+          isDragging
+            ? 'border-vermilion bg-vermilion-wash'
+            : 'border-rule bg-paper hover:border-rule-strong hover:bg-paper-deep'
+        }`}
       >
-        <p className="text-white text-sm font-medium leading-snug line-clamp-2" style={{ fontFamily: 'Syne, sans-serif' }}>
+        <p className="text-sm font-medium leading-snug line-clamp-2 text-ink">
           {job?.job_title ?? 'Unknown role'}
         </p>
-        <p className="text-slate-500 text-xs mt-0.5">{job?.company_name ?? ''}</p>
-        <div className="flex items-center justify-between mt-2.5">
-          <MatchScoreBadge score={job?.match_score ?? null} />
-          <span className="text-slate-700 text-xs">
+        <p className="text-ink-faint text-xs mt-1">{job?.company_name ?? ''}</p>
+
+        <div className="flex items-end justify-between mt-3 pt-3 border-t border-rule">
+          <MatchScoreBadge score={job?.match_score ?? null} size="sm" />
+          <span className="font-mono text-[0.625rem] text-ink-faint tabular-nums">
             {formatRelativeTime(application.status_updated_at)}
           </span>
         </div>

@@ -3,10 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { AuthShell, AuthField, AuthError, AuthSubmit } from '@/components/auth/AuthShell'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
@@ -36,65 +33,60 @@ export default function ForgotPasswordPage() {
 
   if (sent) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0F172A] p-4">
-        <Card className="w-full max-w-md bg-slate-900 border-slate-700 text-center">
-          <CardContent className="pt-8 pb-8 space-y-4">
-            <div className="text-4xl">📧</div>
-            <h2 className="text-xl font-semibold text-white">Check your email</h2>
-            <p className="text-slate-400">
-              We sent a password reset link to <span className="text-white">{email}</span>.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <AuthShell
+        eyebrow="Sent"
+        title="Check your"
+        accent="email"
+        standfirst="A reset link is on its way."
+        footer={
+          <div>
+            <Link href="/login" className="link-underline">
+              Back to sign in
+            </Link>
+          </div>
+        }
+      >
+        <div className="border-l-2 border-vermilion pl-4 py-1">
+          <p className="text-sm text-ink-soft leading-relaxed">
+            We sent a password reset link to{' '}
+            <span className="font-mono text-ink">{email}</span>.
+          </p>
+        </div>
+        <p className="field-label mt-6">Link expires in one hour.</p>
+      </AuthShell>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0F172A] p-4">
-      <Card className="w-full max-w-md bg-slate-900 border-slate-700">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl text-white">
-            Job<span className="text-[#10B981]">Radar</span>
-          </CardTitle>
-          <CardDescription className="text-slate-400">
-            Reset your password
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-slate-300">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                placeholder="you@example.com"
-                className="bg-slate-800 border-slate-600 text-white placeholder:text-slate-500"
-              />
-            </div>
-            {error && (
-              <p className="text-sm text-red-400 bg-red-950/30 border border-red-800 rounded p-2">
-                {error}
-              </p>
-            )}
-            <Button
-              type="submit"
-              className="w-full bg-[#10B981] hover:bg-[#059669] text-white"
-              disabled={loading}
-            >
-              {loading ? 'Sending…' : 'Send reset link'}
-            </Button>
-          </form>
-          <div className="mt-4 text-center text-sm text-slate-400">
-            <Link href="/login" className="text-[#10B981] hover:underline">
-              Back to sign in
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+    <AuthShell
+      eyebrow="Recovery"
+      title="Reset"
+      accent="password"
+      standfirst="We will email you a link to set a new one."
+      footer={
+        <div>
+          Remembered it?{' '}
+          <Link href="/login" className="link-underline font-medium text-ink">
+            Sign in
+          </Link>
+        </div>
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <AuthField
+          id="email"
+          label="Email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          placeholder="you@example.com"
+        />
+
+        {error && <AuthError>{error}</AuthError>}
+
+        <AuthSubmit loading={loading} idle="Send reset link" busy="Sending" />
+      </form>
+    </AuthShell>
   )
 }

@@ -1,8 +1,6 @@
 'use client'
 
-import { useState, type CSSProperties } from 'react'
-import { ExternalLink, Bookmark, ChevronDown, ChevronUp, Sparkles } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { useState } from 'react'
 import { MatchScoreBadge } from './MatchScoreBadge'
 import type { Job } from '@/types'
 
@@ -14,106 +12,96 @@ interface Props {
   onGenerateDocs: (job: Job) => void
 }
 
+const SOURCE_LABEL: Record<Job['source'], string> = {
+  linkedin: 'LinkedIn',
+  indeed: 'Indeed',
+  eluta: 'Eluta',
+  workopolis: 'Workopolis',
+}
+
 export function JobCard({ job, scoreLoading, onApply, onSave, onGenerateDocs }: Props) {
   const [expanded, setExpanded] = useState(false)
 
-  const SOURCE_STYLES: Record<Job['source'], CSSProperties> = {
-    linkedin: { background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.3)', color: '#93C5FD' },
-    indeed: { background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.3)', color: '#C4B5FD' },
-    eluta: { background: 'rgba(20,184,166,0.12)', border: '1px solid rgba(20,184,166,0.3)', color: '#5EEAD4' },
-    workopolis: { background: 'rgba(244,114,182,0.12)', border: '1px solid rgba(244,114,182,0.3)', color: '#F9A8D4' },
-  }
-  const sourceStyle = SOURCE_STYLES[job.source] ?? SOURCE_STYLES.linkedin
-
-  const accentColor =
-    job.match_score === null  ? '#1E2D3D'
-    : job.match_score >= 70  ? '#10B981'
-    : job.match_score >= 40  ? '#F59E0B'
-                              : '#EF4444'
+  // Only a strong match earns the edge. If every row is marked, none is.
+  const flagged = job.match_score !== null && job.match_score >= 75
 
   return (
-    <div
-      className="card-hover animate-fade-up"
-      style={{
-        background: '#0D1424',
-        border: '1px solid #1E2D3D',
-        borderLeft: `3px solid ${accentColor}`,
-        borderRadius: 12,
-        padding: '1rem',
-        position: 'relative',
-        overflow: 'hidden',
-      }}
+    <article
+      className="row-hover group relative border-b border-rule bg-paper"
+      style={flagged ? { boxShadow: 'inset 2px 0 0 0 var(--vermilion)' } : undefined}
     >
-      {job.match_score !== null && job.match_score >= 70 && (
-        <div aria-hidden style={{
-          position: 'absolute', top: -40, right: -40,
-          width: 120, height: 120, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }} />
-      )}
+      <div className="flex items-start gap-6 py-6 pl-5 pr-1">
+        <MatchScoreBadge score={job.match_score} loading={scoreLoading} />
 
-      <div className="space-y-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap mb-1.5">
-              <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={sourceStyle}>
-                {job.source}
-              </span>
-              <MatchScoreBadge score={job.match_score} loading={scoreLoading} />
-            </div>
-            <h3 className="text-white font-semibold leading-snug text-base" style={{ fontFamily: 'Syne, sans-serif' }}>
-              {job.job_title}
-            </h3>
-            <p className="text-slate-400 text-sm mt-0.5">
-              {job.company_name ?? 'Unknown company'}
-              {job.location && <span className="text-slate-600"> · {job.location}</span>}
-            </p>
-          </div>
-          <div className="flex gap-2 shrink-0">
-            <Button
-              size="sm"
-              className="text-xs h-8 px-3 border-0"
-              style={{ background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.35)', color: '#A5B4FC' }}
-              onClick={() => onSave(job)}
-            >
-              <Bookmark size={12} className="mr-1" /> Save
-            </Button>
-            <Button
-              size="sm"
-              className="text-xs h-8 px-3 border-0"
-              style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.35)', color: '#10B981' }}
-              onClick={() => onGenerateDocs(job)}
-            >
-              <Sparkles size={12} className="mr-1" /> AI Docs
-            </Button>
-            {job.apply_url && (
-              <Button
-                size="sm"
-                className="text-xs h-8 px-3 btn-glow border-0"
-                style={{ background: 'linear-gradient(135deg, #10B981, #059669)', color: '#fff' }}
-                onClick={() => onApply(job)}
-              >
-                Apply <ExternalLink size={12} className="ml-1" />
-              </Button>
+        <div className="flex-1 min-w-0">
+          {/* Provenance line — mono, because it is all codes and sources. */}
+          <div className="flex items-center gap-2 mb-2 font-mono text-[0.6875rem] text-ink-faint">
+            <span className="uppercase tracking-wider">{SOURCE_LABEL[job.source] ?? job.source}</span>
+            {job.province && (
+              <>
+                <span aria-hidden className="text-rule-strong">/</span>
+                <span className="text-ink-soft">{job.province}</span>
+              </>
             )}
           </div>
+
+          <h3 className="font-display text-2xl leading-tight text-ink">
+            {job.job_title}
+          </h3>
+
+          <p className="text-sm text-ink-soft mt-1">
+            {job.company_name ?? 'Company not stated'}
+            {job.location && (
+              <>
+                <span aria-hidden className="text-rule-strong mx-2">·</span>
+                <span className="text-ink-faint">{job.location}</span>
+              </>
+            )}
+          </p>
+
+          {job.job_description && (
+            <div className="mt-3">
+              <p
+                className={`text-sm text-ink-soft leading-relaxed max-w-2xl ${
+                  expanded ? '' : 'line-clamp-2'
+                }`}
+              >
+                {job.job_description}
+              </p>
+              <button
+                onClick={() => setExpanded(!expanded)}
+                className="field-label mt-2 hover:text-vermilion transition-colors duration-150"
+              >
+                {expanded ? '— Collapse' : '+ Full description'}
+              </button>
+            </div>
+          )}
         </div>
 
-        {job.job_description && (
-          <div>
-            <p className={`text-slate-400 text-sm leading-relaxed ${expanded ? '' : 'line-clamp-2'}`}>
-              {job.job_description}
-            </p>
+        {/* Actions stay quiet until the row is engaged. */}
+        <div className="flex flex-col items-end gap-2 shrink-0 pt-1">
+          {job.apply_url && (
             <button
-              onClick={() => setExpanded(!expanded)}
-              className="text-[#34D399] text-xs mt-1 flex items-center gap-1 hover:text-[#6EE7B7] transition-colors"
+              onClick={() => onApply(job)}
+              className="px-4 py-2 text-xs font-medium tracking-wide uppercase bg-vermilion text-paper-raised hover:bg-vermilion-deep transition-colors duration-150"
             >
-              {expanded ? <><ChevronUp size={12} /> Hide</> : <><ChevronDown size={12} /> View Full Description</>}
+              Apply
             </button>
-          </div>
-        )}
+          )}
+          <button
+            onClick={() => onGenerateDocs(job)}
+            className="px-4 py-2 text-xs font-medium tracking-wide uppercase border border-ink text-ink hover:bg-vermilion-wash transition-colors duration-150"
+          >
+            Documents
+          </button>
+          <button
+            onClick={() => onSave(job)}
+            className="field-label hover:text-ink transition-colors duration-150"
+          >
+            Save
+          </button>
+        </div>
       </div>
-    </div>
+    </article>
   )
 }

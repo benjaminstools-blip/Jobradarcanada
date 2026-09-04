@@ -2,15 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Settings, LogOut } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 
 const TABS = [
-  { label: 'Upload CV', href: '/upload' },
-  { label: 'Job Feed', href: '/jobs' },
-  { label: 'Tracker', href: '/tracker' },
-  { label: 'Dashboard', href: '/dashboard' },
+  { label: 'Upload', href: '/upload', index: '01' },
+  { label: 'Feed', href: '/jobs', index: '02' },
+  { label: 'Tracker', href: '/tracker', index: '03' },
+  { label: 'Dashboard', href: '/dashboard', index: '04' },
 ]
 
 export function TopNav() {
@@ -25,64 +24,62 @@ export function TopNav() {
   }
 
   return (
-    <header
-      className="sticky top-0 z-50"
-      style={{
-        background: 'rgba(8, 13, 26, 0.85)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(16, 185, 129, 0.12)',
-      }}
-    >
-      <div className="max-w-7xl mx-auto px-4 h-14 flex items-center gap-6">
-        <span className="text-lg font-bold shrink-0" style={{ fontFamily: 'Syne, sans-serif' }}>
-          <span className="text-white">Job</span>
-          <span style={{
-            background: 'linear-gradient(135deg, #10B981, #34D399)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-          }}>Radar</span>
-        </span>
+    <header className="sticky top-0 z-50 bg-paper border-b border-rule-strong">
+      <div className="page-frame flex items-center gap-8 h-16">
+        <Link href="/jobs" className="shrink-0 group">
+          <span className="font-display text-2xl leading-none tracking-tight">
+            Job
+            <span className="italic text-vermilion">Canada</span>
+          </span>
+        </Link>
 
-        <nav className="flex-1 flex items-center justify-center gap-1">
+        {/* Numbered like dossier sections. Scrolls rather than collapsing on
+            small screens — a hamburger hides the whole information scent. */}
+        <nav className="flex-1 flex items-stretch gap-6 overflow-x-auto h-16">
           {TABS.map((tab) => {
             const active = pathname === tab.href
             return (
               <Link
                 key={tab.href}
                 href={tab.href}
+                aria-current={active ? 'page' : undefined}
                 className={cn(
-                  'px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200',
-                  active ? 'text-white' : 'text-slate-500 hover:text-slate-200 hover:bg-white/5'
+                  'group relative flex items-center gap-2 shrink-0 transition-colors duration-150',
+                  active ? 'text-ink' : 'text-ink-faint hover:text-ink'
                 )}
-                style={active ? {
-                  background: 'linear-gradient(135deg, rgba(16,185,129,0.2), rgba(52,211,153,0.1))',
-                  border: '1px solid rgba(16,185,129,0.35)',
-                  color: '#34D399',
-                } : {}}
               >
-                {tab.label}
+                <span className="font-mono text-[0.625rem] tabular-nums opacity-60">
+                  {tab.index}
+                </span>
+                <span className="text-sm font-medium">{tab.label}</span>
+                <span
+                  className={cn(
+                    'absolute left-0 right-0 bottom-0 h-[2px] transition-transform duration-150 origin-left',
+                    active
+                      ? 'bg-vermilion scale-x-100'
+                      : 'bg-rule-strong scale-x-0 group-hover:scale-x-100'
+                  )}
+                />
               </Link>
             )
           })}
         </nav>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-5 shrink-0">
           <Link
             href="/settings"
             className={cn(
-              'p-2 rounded-md transition-colors',
-              pathname === '/settings' ? 'text-[#10B981]' : 'text-slate-500 hover:text-slate-200 hover:bg-white/5'
+              'field-label transition-colors duration-150 hover:text-ink',
+              pathname === '/settings' && 'text-vermilion'
             )}
           >
-            <Settings size={18} />
+            Settings
           </Link>
           <button
             onClick={handleLogout}
-            className="p-2 rounded-md text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+            className="field-label transition-colors duration-150 hover:text-clay"
           >
-            <LogOut size={18} />
+            Sign out
           </button>
         </div>
       </div>
