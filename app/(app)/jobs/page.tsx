@@ -110,7 +110,14 @@ export default function JobsPage() {
     setFetchStatus('Starting job search…')
     setPartialWarning('')
 
-    let started: { runs: Record<string, string>; errors: string[] }
+    let started: {
+      runs: Record<string, string>
+      errors: string[]
+      /** What was actually searched — the server refines the typed phrase. */
+      searchQuery?: string
+      /** The original phrase, set only when refinement changed it. */
+      refinedFrom?: string | null
+    }
 
     try {
       const res = await fetch('/api/jobs/fetch', {
@@ -136,7 +143,9 @@ export default function JobsPage() {
 
     // Client-side polling — works on Vercel free tier
     setFetchStatus(
-      `Searching ${requested.map(label).join(', ')}… (this takes 30–90 seconds)`
+      started.refinedFrom && started.searchQuery
+        ? `Searching “${started.searchQuery}” — broadened from “${started.refinedFrom}” to match your profile…`
+        : `Searching ${requested.map(label).join(', ')}… (this takes 30–90 seconds)`
     )
 
     // Sources that never started count as failures from the outset.

@@ -6,8 +6,28 @@ import {
   indeedCountryName,
 } from '@/lib/apify'
 import { sourcesFor } from '@/lib/sources'
-import { resolveApifyKey, NO_APIFY_KEY } from '@/lib/keys'
+import { resolveApifyKey, NO_APIFY_KEY, resolveAnthropicKey } from '@/lib/keys'
+import { createClaudeClient, CV_PARSE_MODEL, textOf } from '@/lib/claude'
+import { buildSearchQueryPrompt } from '@/lib/prompts'
+import { nocTitle } from '@/lib/noc'
 import { NextResponse } from 'next/server'
+import { z } from 'zod'
+
+export const maxDuration = 60
+
+const QueriesSchema = z.object({ queries: z.array(z.string()).min(1).max(3) })
+
+// No minItems/maxItems — the API rejects them on an array ("For 'array' type,
+// property 'maxItems' is not supported"). The 1-3 bound is enforced by
+// QueriesSchema after parsing instead.
+const QUERIES_JSON_SCHEMA = {
+  type: 'object',
+  properties: {
+    queries: { type: 'array', items: { type: 'string' } },
+  },
+  required: ['queries'],
+  additionalProperties: false,
+} as const
 
 export async function POST(request: Request) {
   const supabase = await createClient()
@@ -38,7 +58,49 @@ export async function POST(request: Request) {
   if (!apifyKey) return NextResponse.json(NO_APIFY_KEY, { status: 400 })
   const apify = createApifyClient(apifyKey)
 
-  const params = { jobTitle, location: location ?? '', country, countryName, regionText }
+  // Refine the typed phrase into terms that match the candidate's actual
+  // occupation. A literal search on what she types drifts into the wrong
+  // industry — see buildSearchQueryPrompt. Never block the search on this:
+  // any failure falls back to the raw phrase.
+  let searchQuery = jobTitle.trim()
+  let refinedFrom: string | null = null
+
+  const [{ data: profile }, { data: anthropicRow }] = await Promise.all([
+    supabase.from('cv_profiles').select('*').eq('user_id', user.id).maybeSingle(),
+    supabase.from('user_api_keys').select('anthropic_api_key').eq('user_id', user.id).maybeSingle(),
+  ])
+
+  const anthropicKey = resolveAnthropicKey(user.id, anthropicRow?.anthropic_api_key)
+
+  if (profile && anthropicKey) {
+    try {
+      const groupTitle = profile.noc_code ? nocTitle(profile.noc_code) ?? null : null
+      const prompt = buildSearchQueryPrompt(profile, jobTitle.trim(), groupTitle)
+      const claude = createClaudeClient(anthropicKey)
+      const message = await claude.messages.create({
+        model: CV_PARSE_MODEL,
+        max_tokens: 2048,
+        output_config: {
+          effort: 'low',
+          format: { type: 'json_schema', schema: QUERIES_JSON_SCHEMA },
+        },
+        system: prompt.system,
+        messages: prompt.messages,
+      })
+      if (message.stop_reason !== 'refusal') {
+        const { queries } = QueriesSchema.parse(JSON.parse(textOf(message)))
+        const best = queries[0]?.trim()
+        if (best && best.toLowerCase() !== jobTitle.trim().toLowerCase()) {
+          refinedFrom = jobTitle.trim()
+          searchQuery = best
+        }
+      }
+    } catch (err) {
+      console.error('[jobs/fetch] query refine:', err instanceof Error ? err.message : err)
+    }
+  }
+
+  const params = { jobTitle: searchQuery, location: location ?? '', country, countryName, regionText }
   const sources = sourcesFor(country)
 
   // Start every applicable actor concurrently and return immediately — Apify
@@ -69,5 +131,5 @@ export async function POST(request: Request) {
     }, { status: 502 })
   }
 
-  return NextResponse.json({ runs, errors })
+  return NextResponse.json({ runs, errors, searchQuery, refinedFrom })
 }

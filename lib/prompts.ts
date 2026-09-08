@@ -151,3 +151,61 @@ ${job.job_description ?? job.job_title}`,
     ],
   }
 }
+
+/**
+ * Turns what the user typed into search terms that match how employers title
+ * the work she actually does.
+ *
+ * Why this exists: a literal keyword search on the typed phrase returns the
+ * wrong industry. A search for "Client service cordinator" filled the feed with
+ * retail and banking "Client Service Representative" postings scoring 6-40,
+ * while the one job the user found herself — "Diversion Case Manager" — scored
+ * 82. Retrieval was the failure, not scoring. The CV profile and NOC unit group
+ * name the real occupation, so they anchor the query here.
+ */
+export function buildSearchQueryPrompt(
+  profile: CVProfile,
+  typed: string,
+  nocGroupTitle: string | null
+): ClaudePrompt {
+  const skills = Array.isArray(profile.technical_skills)
+    ? profile.technical_skills.slice(0, 20).join(', ')
+    : ''
+
+  return {
+    system: `You write job-board search queries for a Canadian job seeker.
+
+Return 1-3 short queries a job board would match well. Rules:
+- Correct obvious misspellings in what the candidate typed ("cordinator" is
+  "coordinator"). Job boards match literally and do not forgive typos.
+- Stay in the candidate's actual occupation. The typed phrase is intent, not
+  gospel — if it is ambiguous across industries, disambiguate it using the NOC
+  unit group and CV, and never drift into a different field to match wording.
+- Use titles employers actually post, not abstract descriptions. Two to four
+  words each. No boolean operators, quotes, or location terms — location is
+  passed separately.
+- The FIRST query is searched on its own by most boards, so it must be the single
+  best one for reaching this candidate's real work. Do not put a lightly
+  corrected echo of the typed phrase first when the typed phrase points at the
+  wrong industry — "client services coordinator" retrieves retail and banking
+  postings, which is the exact failure this step exists to prevent.
+- Add a second or third only when they reach genuinely different postings, not
+  cosmetic rewordings.
+- Do not invent seniority the CV does not support.`,
+    messages: [
+      {
+        role: 'user',
+        content: `The candidate typed: "${typed}"
+
+CANDIDATE:
+Current title: ${profile.current_job_title ?? 'not stated'}
+Years of experience: ${profile.years_of_experience ?? 'not stated'}
+NOC 2021 unit group: ${nocGroupTitle ?? 'not determined'}
+Key skills: ${skills || 'not stated'}
+Summary: ${profile.professional_summary ?? 'not stated'}
+
+Give the search queries.`,
+      },
+    ],
+  }
+}
