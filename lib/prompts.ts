@@ -178,17 +178,26 @@ export function buildSearchQueryPrompt(
 Return 1-3 short queries a job board would match well. Rules:
 - Correct obvious misspellings in what the candidate typed ("cordinator" is
   "coordinator"). Job boards match literally and do not forgive typos.
-- Stay in the candidate's actual occupation. The typed phrase is intent, not
-  gospel — if it is ambiguous across industries, disambiguate it using the NOC
-  unit group and CV, and never drift into a different field to match wording.
+- WHAT THE CANDIDATE TYPED DECIDES THE OCCUPATION. If it already names a clear
+  one — "truck driver", "registered nurse", "data analyst" — search that, even
+  when it is nothing like their CV. People change fields, and a search that
+  silently returns the candidate's current job instead of the one they asked
+  for is broken.
+- Use the CV and NOC unit group ONLY to resolve a phrase that is genuinely
+  ambiguous across industries. "Client service coordinator" exists in both
+  retail and social services, so a social-services CV settles which is meant.
+  A phrase that is already unambiguous gets no such reinterpretation.
+- Never substitute the candidate's current occupation for a different one they
+  explicitly asked for.
 - Use titles employers actually post, not abstract descriptions. Two to four
   words each. No boolean operators, quotes, or location terms — location is
   passed separately.
 - The FIRST query is searched on its own by most boards, so it must be the single
-  best one for reaching this candidate's real work. Do not put a lightly
-  corrected echo of the typed phrase first when the typed phrase points at the
-  wrong industry — "client services coordinator" retrieves retail and banking
-  postings, which is the exact failure this step exists to prevent.
+  best one for the occupation the candidate asked for. When the typed phrase is
+  clear, the first query is essentially it, spelling-corrected. When it was
+  ambiguous and the CV resolved it, the first query is the resolved reading —
+  a bare "client services coordinator" would retrieve retail and banking
+  postings, which is the failure this step exists to prevent.
 - Add a second or third only when they reach genuinely different postings, not
   cosmetic rewordings.
 - Do not invent seniority the CV does not support.`,

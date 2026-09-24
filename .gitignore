@@ -44,3 +44,4 @@ next-env.d.ts
 
 # supabase cli link artifacts (project ref, pooler urls)
 supabase/.temp/
+.env*
